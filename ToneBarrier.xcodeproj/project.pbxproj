@@ -7,6 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		B96C25B12865F0EA00A75975 /* ClicklessTones.m in Sources */ = {isa = PBXBuildFile; fileRef = B96C25AF2865F0EA00A75975 /* ClicklessTones.m */; };
+		B96C25B42865F1A400A75975 /* easing.c in Sources */ = {isa = PBXBuildFile; fileRef = B96C25B22865F1A400A75975 /* easing.c */; };
+		B9869C5C28672EE8004C4E18 /* ToneBarrierPlayer.m in Sources */ = {isa = PBXBuildFile; fileRef = B9869C5B28672EE8004C4E18 /* ToneBarrierPlayer.m */; };
+		B9869C5F28672FAC004C4E18 /* ToneGenerator.m in Sources */ = {isa = PBXBuildFile; fileRef = B9869C5D28672FAC004C4E18 /* ToneGenerator.m */; };
+		B9869C62286733DA004C4E18 /* Frequencies.m in Sources */ = {isa = PBXBuildFile; fileRef = B9869C60286733DA004C4E18 /* Frequencies.m */; };
+		B9869C6628673755004C4E18 /* MediaPlayer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B9869C6428673755004C4E18 /* MediaPlayer.framework */; };
+		B9869C6728673755004C4E18 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B9869C6528673755004C4E18 /* AudioToolbox.framework */; };
 		B99077E0285AD0AF004F494E /* AppDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = B99077DF285AD0AF004F494E /* AppDelegate.m */; };
 		B99077E3285AD0AF004F494E /* SceneDelegate.m in Sources */ = {isa = PBXBuildFile; fileRef = B99077E2285AD0AF004F494E /* SceneDelegate.m */; };
 		B99077E6285AD0AF004F494E /* ViewController.m in Sources */ = {isa = PBXBuildFile; fileRef = B99077E5285AD0AF004F494E /* ViewController.m */; };
@@ -17,12 +24,24 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		B96C25AF2865F0EA00A75975 /* ClicklessTones.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ClicklessTones.m; sourceTree = "<group>"; };
+		B96C25B02865F0EA00A75975 /* ClicklessTones.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ClicklessTones.h; sourceTree = "<group>"; };
+		B96C25B22865F1A400A75975 /* easing.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = easing.c; sourceTree = "<group>"; };
+		B96C25B32865F1A400A75975 /* easing.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = easing.h; sourceTree = "<group>"; };
+		B9869C5A28672EE8004C4E18 /* ToneBarrierPlayer.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ToneBarrierPlayer.h; sourceTree = "<group>"; };
+		B9869C5B28672EE8004C4E18 /* ToneBarrierPlayer.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ToneBarrierPlayer.m; sourceTree = "<group>"; };
+		B9869C5D28672FAC004C4E18 /* ToneGenerator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ToneGenerator.m; sourceTree = "<group>"; };
+		B9869C5E28672FAC004C4E18 /* ToneGenerator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ToneGenerator.h; sourceTree = "<group>"; };
+		B9869C60286733DA004C4E18 /* Frequencies.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Frequencies.m; sourceTree = "<group>"; };
+		B9869C61286733DA004C4E18 /* Frequencies.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Frequencies.h; sourceTree = "<group>"; };
+		B9869C6428673755004C4E18 /* MediaPlayer.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MediaPlayer.framework; path = System/Library/Frameworks/MediaPlayer.framework; sourceTree = SDKROOT; };
+		B9869C6528673755004C4E18 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
 		B99077DB285AD0AF004F494E /* ToneBarrier.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ToneBarrier.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B99077DE285AD0AF004F494E /* AppDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = AppDelegate.h; sourceTree = "<group>"; };
 		B99077DF285AD0AF004F494E /* AppDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = AppDelegate.m; sourceTree = "<group>"; };
 		B99077E1285AD0AF004F494E /* SceneDelegate.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = SceneDelegate.h; sourceTree = "<group>"; };
 		B99077E2285AD0AF004F494E /* SceneDelegate.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = SceneDelegate.m; sourceTree = "<group>"; };
-		B99077E4285AD0AF004F494E /* ViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ViewController.h; sourceTree = "<group>"; };
+		B99077E4285AD0AF004F494E /* ViewController.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = ViewController.h; sourceTree = "<group>"; wrapsLines = 0; };
 		B99077E5285AD0AF004F494E /* ViewController.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = ViewController.m; sourceTree = "<group>"; };
 		B99077E8285AD0AF004F494E /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		B99077EA285AD0B0004F494E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -36,17 +55,29 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B9869C6628673755004C4E18 /* MediaPlayer.framework in Frameworks */,
+				B9869C6728673755004C4E18 /* AudioToolbox.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		B9869C6328673755004C4E18 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				B9869C6528673755004C4E18 /* AudioToolbox.framework */,
+				B9869C6428673755004C4E18 /* MediaPlayer.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		B99077D2285AD0AF004F494E = {
 			isa = PBXGroup;
 			children = (
 				B99077DD285AD0AF004F494E /* ToneBarrier */,
 				B99077DC285AD0AF004F494E /* Products */,
+				B9869C6328673755004C4E18 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -61,12 +92,22 @@
 		B99077DD285AD0AF004F494E /* ToneBarrier */ = {
 			isa = PBXGroup;
 			children = (
+				B9869C61286733DA004C4E18 /* Frequencies.h */,
+				B9869C60286733DA004C4E18 /* Frequencies.m */,
+				B9869C5E28672FAC004C4E18 /* ToneGenerator.h */,
+				B9869C5D28672FAC004C4E18 /* ToneGenerator.m */,
+				B9869C5A28672EE8004C4E18 /* ToneBarrierPlayer.h */,
+				B9869C5B28672EE8004C4E18 /* ToneBarrierPlayer.m */,
 				B99077DE285AD0AF004F494E /* AppDelegate.h */,
 				B99077DF285AD0AF004F494E /* AppDelegate.m */,
 				B99077E1285AD0AF004F494E /* SceneDelegate.h */,
 				B99077E2285AD0AF004F494E /* SceneDelegate.m */,
 				B99077E4285AD0AF004F494E /* ViewController.h */,
 				B99077E5285AD0AF004F494E /* ViewController.m */,
+				B96C25B22865F1A400A75975 /* easing.c */,
+				B96C25B32865F1A400A75975 /* easing.h */,
+				B96C25B02865F0EA00A75975 /* ClicklessTones.h */,
+				B96C25AF2865F0EA00A75975 /* ClicklessTones.m */,
 				B99077E7285AD0AF004F494E /* Main.storyboard */,
 				B99077EA285AD0B0004F494E /* Assets.xcassets */,
 				B99077EC285AD0B0004F494E /* LaunchScreen.storyboard */,
@@ -146,10 +187,15 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B96C25B42865F1A400A75975 /* easing.c in Sources */,
 				B99077E6285AD0AF004F494E /* ViewController.m in Sources */,
 				B99077E0285AD0AF004F494E /* AppDelegate.m in Sources */,
+				B96C25B12865F0EA00A75975 /* ClicklessTones.m in Sources */,
 				B99077F1285AD0B0004F494E /* main.m in Sources */,
+				B9869C5C28672EE8004C4E18 /* ToneBarrierPlayer.m in Sources */,
 				B99077E3285AD0AF004F494E /* SceneDelegate.m in Sources */,
+				B9869C62286733DA004C4E18 /* Frequencies.m in Sources */,
+				B9869C5F28672FAC004C4E18 /* ToneGenerator.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -295,9 +341,11 @@
 				DEVELOPMENT_TEAM = N9987K9442;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ToneBarrier/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = tone.barrier;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
+				INFOPLIST_KEY_UIRequiresFullScreen = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -322,9 +370,11 @@
 				DEVELOPMENT_TEAM = N9987K9442;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = ToneBarrier/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = tone.barrier;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchStoryboardName = LaunchScreen;
 				INFOPLIST_KEY_UIMainStoryboardFile = Main;
+				INFOPLIST_KEY_UIRequiresFullScreen = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
