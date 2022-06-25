@@ -7,9 +7,11 @@
 
 #import <UIKit/UIKit.h>
 #import <AVFoundation/AVFoundation.h>
+#import <AVKit/AVKit.h>
 
 #import "AppDelegate.h"
 #import "ToneGenerator.h"
+#import "AudioRoutePicker.h"
 
 #define low_bound   300.0f
 #define high_bound 4000.0f

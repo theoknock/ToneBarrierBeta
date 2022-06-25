@@ -113,7 +113,10 @@ static ToneGenerator *sharedGenerator = NULL;
                 [_audioEngine startAndReturnError:&error];
         
         [[AVAudioSession sharedInstance] setActive:YES error:&error];
-        [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayback error:nil];
+//        [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayAndRecord /*AVAudioSessionCategoryPlayback*/ error:nil];
+        [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayAndRecord mode:AVAudioSessionModeMeasurement routeSharingPolicy:AVAudioSessionRouteSharingPolicyDefault options:AVAudioSessionCategoryOptionAllowAirPlay error:&error];
+        
+        NSLog(@"\nAirPlay error:\n\n%@\n\n", error.debugDescription);
     }
     
     return self;

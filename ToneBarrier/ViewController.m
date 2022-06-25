@@ -24,9 +24,10 @@
 @property (weak, nonatomic) IBOutlet UIImageView *thermometerImageView;
 @property (weak, nonatomic) IBOutlet UIImageView *batteryImageView;
 @property (weak, nonatomic) IBOutlet UIImageView *batteryLevelImageView;
-//@property (weak, nonatomic) IBOutlet UIImageView *playButton;
 
 @property (weak, nonatomic) IBOutlet UIButton *playButton;
+@property (weak, nonatomic) IBOutlet AudioRoutePicker *audioRoutePicker;
+
 @property (weak, nonatomic) IBOutlet UIImageView *heartRateImage;
 
 @property (assign) id toneBarrierPlayingObserver;

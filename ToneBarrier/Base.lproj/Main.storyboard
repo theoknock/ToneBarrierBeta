@@ -4,6 +4,7 @@
     <dependencies>
         <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="21169.4"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
+        <capability name="System colors in document resources" minToolsVersion="11.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
     <scenes>
@@ -20,7 +21,7 @@
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                             </imageView>
-                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="CxI-Ah-rhD" userLabel="Play Button">
+                            <button opaque="NO" contentMode="scaleAspectFit" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="system" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="CxI-Ah-rhD" userLabel="Play Button">
                                 <rect key="frame" x="-188" y="363" width="766" height="128.33333333333337"/>
                                 <state key="normal" title="Button"/>
                                 <buttonConfiguration key="configuration" style="plain" image="play" catalog="system">
@@ -30,16 +31,26 @@
                                     <action selector="toggleToneGenerator:" destination="9it-0F-OTs" eventType="touchUpInside" id="XK5-vq-I5C"/>
                                 </connections>
                             </button>
+                            <view opaque="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="X1F-ma-vgH" customClass="AudioRoutePicker">
+                                <rect key="frame" x="0.0" y="758.66666666666663" width="390" height="51.333333333333371"/>
+                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <color key="tintColor" systemColor="systemBlueColor"/>
+                            </view>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="czV-Br-Vf9"/>
                         <color key="backgroundColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <constraints>
                             <constraint firstItem="CxI-Ah-rhD" firstAttribute="centerX" secondItem="czV-Br-Vf9" secondAttribute="centerX" id="GFs-d2-wT1"/>
+                            <constraint firstItem="X1F-ma-vgH" firstAttribute="bottom" secondItem="czV-Br-Vf9" secondAttribute="bottom" id="KrD-yz-taI"/>
                             <constraint firstItem="CxI-Ah-rhD" firstAttribute="centerY" secondItem="czV-Br-Vf9" secondAttribute="centerY" id="LkY-TV-3FO"/>
+                            <constraint firstItem="X1F-ma-vgH" firstAttribute="centerX" secondItem="CxI-Ah-rhD" secondAttribute="centerX" id="PXw-K3-a3I"/>
+                            <constraint firstItem="X1F-ma-vgH" firstAttribute="height" secondItem="CxI-Ah-rhD" secondAttribute="height" multiplier="0.4" id="aGW-RU-xN7"/>
+                            <constraint firstItem="X1F-ma-vgH" firstAttribute="width" secondItem="czV-Br-Vf9" secondAttribute="width" id="hcn-Bv-T5d"/>
                             <constraint firstItem="CxI-Ah-rhD" firstAttribute="width" secondItem="czV-Br-Vf9" secondAttribute="height" multiplier="1:1" id="pSC-d8-CRf"/>
                         </constraints>
                     </view>
                     <connections>
+                        <outlet property="audioRoutePicker" destination="X1F-ma-vgH" id="HoX-M4-1SP"/>
                         <outlet property="playButton" destination="CxI-Ah-rhD" id="dEG-a2-sDT"/>
                     </connections>
                 </viewController>
@@ -51,5 +62,8 @@
     <resources>
         <image name="play" catalog="system" width="117" height="128"/>
         <image name="waveform.path" catalog="system" width="128" height="113"/>
+        <systemColor name="systemBlueColor">
+            <color red="0.0" green="0.47843137254901963" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
     </resources>
 </document>
