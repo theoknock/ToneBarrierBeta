@@ -12,8 +12,9 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface ClicklessTones : NSObject <ToneBarrierPlayerDelegate>
+@interface ClicklessTones : NSObject // <ToneBarrierPlayerDelegate>
 
++ (nonnull ClicklessTones *)sharedClicklessTones;
 - (instancetype)init;
 - (void)createAudioBufferWithFormat:(AVAudioFormat *)audioFormat completionBlock:(CreateAudioBufferCompletionBlock)createAudioBufferCompletionBlock;
 

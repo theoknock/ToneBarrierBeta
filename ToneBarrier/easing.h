@@ -15,13 +15,16 @@
 double LinearInterpolation(double a, double b);
 
 // Normalized sine curve for amplitude
-double NormalizedSineEaseInOut(double x, int ordinary_frequency);
+double NormalizedSineEaseInOut(double x, int ordinary_frequency, int amplitude);
+
+// Normalized cosine curve for amplitude
+double NormalizedCosineEaseInOut(double x, int ordinary_frequency);
 
 // Linear easing
 double LinearEaseInOut(double x);
 
 // Sine-pi easing
-double SinePiEaseInOutTimesFour(double x);
+double SinePiEaseInOutTimesFour(double x, int ordinary_frequency);
 
 // Quadratic easing; x^2
 double QuadraticEaseIn(double x);

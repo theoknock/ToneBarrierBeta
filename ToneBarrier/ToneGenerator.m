@@ -11,7 +11,7 @@
 #import <GameKit/GameKit.h>
 
 #import "ToneGenerator.h"
-#import "ToneBarrierPlayer.h"
+//#import "ToneBarrierPlayer.h"
 #import "ClicklessTones.h"
 //#import "FrequenciesPairs.h"
 #import "Frequencies.h"
@@ -22,7 +22,15 @@
 //static const float low_frequency  = 1000.0;
 
 @interface ToneGenerator ()
+{
+    bool                    _multichannelOutputEnabled;
+    
+    // mananging session and configuration changes
+    BOOL                    _isSessionInterrupted;
+    BOOL                    _isConfigChangePending;
+}
 
+@property (nonatomic, readonly) AVAudioEngine * audioEngine;
 @property (nonatomic, readonly) AVAudioMixerNode * mixerNode;
 @property (nonatomic, readonly) AVAudioPCMBuffer * pcmBufferOne;
 @property (nonatomic, readonly) AVAudioPCMBuffer * pcmBufferTwo;
@@ -34,25 +42,6 @@
 @end
 
 @implementation ToneGenerator
-
-- (void)alarm {
-    
-}
-
-- (NSUInteger)greatestCommonDivisor:(NSUInteger)firstValue secondValue:(NSUInteger)secondValue
-{
-    if (firstValue == 0 && secondValue == 0)
-        return 1;
-    
-    NSUInteger r;
-    while(secondValue)
-    {
-        r = firstValue % secondValue;
-        firstValue = secondValue;
-        secondValue = r;
-    }
-    return firstValue;
-}
 
 static ToneGenerator *sharedGenerator = NULL;
 + (nonnull ToneGenerator *)sharedGenerator
@@ -75,51 +64,61 @@ static ToneGenerator *sharedGenerator = NULL;
     
     if (self)
     {
-        //        semaphore = dispatch_semaphore_create(1);
+        [self initAudioSession];
+        
         _audioEngine = [[AVAudioEngine alloc] init];
         _mixerNode = _audioEngine.mainMixerNode;
         
 //        _environmentNode = [[AVAudioEnvironmentNode alloc] init];
 //        [_environmentNode setOutputType:AVAudioEnvironmentOutputTypeHeadphones];
 //        [_environmentNode setOutputVolume:1.0];
+//        _environmentNode.reverbParameters.enable = YES;
+//        _environmentNode.reverbParameters.level = -20.0;
+//        [_environmentNode.reverbParameters loadFactoryReverbPreset:AVAudioUnitReverbPresetLargeHall];
+//
 //        [_audioEngine attachNode:_environmentNode];
         
         _submixer = [[AVAudioMixerNode alloc] init];
-        [_audioEngine attachNode:_submixer];
         
         _reverb = [[AVAudioUnitReverb alloc] init];
         [_reverb loadFactoryPreset:AVAudioUnitReverbPresetLargeHall];
         [_reverb setWetDryMix:50];
-        [_audioEngine attachNode:_reverb];
         
         _playerOneNode = [[AVAudioPlayerNode alloc] init];
         [_playerOneNode setRenderingAlgorithm:AVAudio3DMixingRenderingAlgorithmAuto];
         [_playerOneNode setSourceMode:AVAudio3DMixingSourceModeAmbienceBed];
-        [_audioEngine attachNode:_playerOneNode];
-        [_audioEngine connect:_playerOneNode to:_submixer format:[_playerOneNode outputFormatForBus:0]];
         
         _playerTwoNode = [[AVAudioPlayerNode alloc] init];
         [_playerTwoNode setRenderingAlgorithm:AVAudio3DMixingRenderingAlgorithmAuto];
         [_playerTwoNode setSourceMode:AVAudio3DMixingSourceModeAmbienceBed];
+        
+        [_audioEngine attachNode:_submixer];
+        [_audioEngine attachNode:_reverb];
+        [_audioEngine attachNode:_playerOneNode];
         [_audioEngine attachNode:_playerTwoNode];
+         
+        [_audioEngine connect:_playerOneNode to:_submixer format:[_playerOneNode outputFormatForBus:0]];
         [_audioEngine connect:_playerTwoNode to:_submixer format:[_playerTwoNode outputFormatForBus:0]];
-        
-        [_audioEngine connect:_submixer to:_reverb format:[_playerOneNode outputFormatForBus:0]];
-        [_audioEngine connect:_reverb to:_mixerNode format:[_playerOneNode outputFormatForBus:0]];
-        
-        
-        
-        __autoreleasing NSError *error = nil;
-                [_audioEngine startAndReturnError:&error];
-        
-        [[AVAudioSession sharedInstance] setActive:YES error:&error];
-//        [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayAndRecord /*AVAudioSessionCategoryPlayback*/ error:nil];
-        [[AVAudioSession sharedInstance] setCategory:AVAudioSessionCategoryPlayAndRecord mode:AVAudioSessionModeMeasurement routeSharingPolicy:AVAudioSessionRouteSharingPolicyDefault options:AVAudioSessionCategoryOptionAllowAirPlay error:&error];
-        
-        NSLog(@"\nAirPlay error:\n\n%@\n\n", error.debugDescription);
+
+        [_audioEngine connect:_submixer to:_reverb format:[_submixer outputFormatForBus:0]];
+        [_audioEngine connect:_reverb to:_mixerNode format:[_reverb outputFormatForBus:0]];
     }
     
     return self;
+}
+
+- (void)initAudioSession {
+    __autoreleasing NSError *error = nil;
+    
+    AVAudioSession *sessionInstance = [AVAudioSession sharedInstance];
+    
+    [sessionInstance setCategory:AVAudioSessionCategoryPlayback withOptions:AVAudioSessionCategoryOptionDefaultToSpeaker error:&error];
+    if (error) NSLog(@"\nsetCategory error:\n\n%@\n\n", error.debugDescription);
+    if (error) NSLog(@"\nsetMode error:\n\n%@\n\n", error.debugDescription);
+    [sessionInstance setPreferredOutputNumberOfChannels:4 error:&error];
+    if (error) NSLog(@"\nsetPreferredOutputNumberOfChannels error:\n\n%@\n\n", error.debugDescription);
+    [sessionInstance setActive:YES error:&error];
+    if (error) NSLog(@"\nsetActive error:\n\n%@\n\n", error.debugDescription);
 }
 
 - (float)generateRandomNumberBetweenMin:(int)min Max:(int)max
@@ -214,55 +213,39 @@ NSArray<NSDictionary<NSString *, id> *> *(^tonesDictionary)(void) = ^NSArray<NSD
     return tones;
 };
 
-- (void)start
+- (BOOL)togglePlay
 {
-    [[AVAudioSession sharedInstance] setActive:YES error:nil];
-
-    if (self.audioEngine.isRunning == NO)
-    {
-        NSError *error = nil;
-        [_audioEngine startAndReturnError:&error];
-        NSLog(@"error: %@", error);
-        [[NSNotificationCenter defaultCenter] postNotificationName:@"ToneBarrierPlayingNotification" object:nil userInfo:nil];
-
-        if (![self->_playerOneNode isPlaying] || ![self->_playerTwoNode isPlaying])
+        if (![self->_audioEngine isRunning])
         {
-            [self->_playerOneNode play];
-            [self->_playerTwoNode play];
-        }
-
-        if (self->_playerOneNode)
-        {
-            //        [self createAudioBufferWithCompletionBlock:^(AVAudioPCMBuffer *buffer1, AVAudioPCMBuffer *buffer2, PlayToneCompletionBlock playToneCompletionBlock) {
-            //            [self->_playerOneNode scheduleBuffer:buffer1 atTime:nil options:AVAudioPlayerNodeBufferInterruptsAtLoop completionCallbackType:AVAudioPlayerNodeCompletionDataPlayedBack completionHandler:^(AVAudioPlayerNodeCompletionCallbackType callbackType) {
-            //                //                if (callbackType == AVAudioPlayerNodeCompletionDataPlayedBack)
-            //                //                    NSLog(@"Calling playToneCompletionBlock 1...");
-            //            }];
-            //            [self->_playerTwoNode scheduleBuffer:buffer2 atTime:nil options:AVAudioPlayerNodeBufferInterruptsAtLoop completionCallbackType:AVAudioPlayerNodeCompletionDataPlayedBack completionHandler:^(AVAudioPlayerNodeCompletionCallbackType callbackType) {
-            //                if (callbackType == AVAudioPlayerNodeCompletionDataPlayedBack)
-            //                    playToneCompletionBlock();
-            //                //                NSLog(@"Calling playToneCompletionBlock 2...");
-            //            }];
-            //        }];
-            //            ToneBarrierPlayer *player = [[ToneBarrierPlayer alloc] init];
-            ClicklessTones *tones = [[ClicklessTones alloc] init];
-            [ToneBarrierPlayer.context setPlayer:(id<ToneBarrierPlayerDelegate> _Nonnull)tones];
-            [ToneBarrierPlayer.context createAudioBufferWithFormat:[self->_mixerNode outputFormatForBus:0] completionBlock:^(AVAudioPCMBuffer * _Nonnull buffer1, AVAudioPCMBuffer * _Nonnull buffer2, PlayToneCompletionBlock playToneCompletionBlock) {
-
-                [self->_playerOneNode scheduleBuffer:buffer1 atTime:nil options:AVAudioPlayerNodeBufferInterruptsAtLoop completionCallbackType:AVAudioPlayerNodeCompletionDataPlayedBack completionHandler:^(AVAudioPlayerNodeCompletionCallbackType callbackType) {
-//                    if (callbackType == AVAudioPlayerNodeCompletionDataPlayedBack)
-//                        playToneCompletionBlock();
+//            [self initAudioSession];
+            
+            __autoreleasing NSError *error = nil;
+            [self.audioEngine startAndReturnError:&error];
+            if (error) NSLog(@"\nstartAndReturnError error:\n\n%@\n\n", error.debugDescription);
+            
+            ([self->_playerOneNode isPlaying]) ?: [self->_playerOneNode play];
+            ([self->_playerTwoNode isPlaying]) ?: [self->_playerTwoNode play];
+             
+            [[ClicklessTones sharedClicklessTones] createAudioBufferWithFormat:[_mixerNode outputFormatForBus:0] completionBlock:^(AVAudioPCMBuffer * _Nonnull buffer1, AVAudioPCMBuffer * _Nonnull buffer2, PlayToneCompletionBlock playToneCompletionBlock) {
+                
+                // TO-DO: Combine buffer1 and buffer2 into a single buffer and play on one node only for AirPlay (which seems to only play one node)
+                
+                
+                (!self->_playerOneNode) ?: [self->_playerOneNode scheduleBuffer:buffer1 atTime:nil options:AVAudioPlayerNodeBufferInterruptsAtLoop completionCallbackType:AVAudioPlayerNodeCompletionDataPlayedBack completionHandler:^(AVAudioPlayerNodeCompletionCallbackType callbackType) {
+//                    playToneCompletionBlock();
                 }];
                 
-                [self->_playerTwoNode scheduleBuffer:buffer2 atTime:nil options:AVAudioPlayerNodeBufferInterruptsAtLoop completionCallbackType:AVAudioPlayerNodeCompletionDataPlayedBack completionHandler:^(AVAudioPlayerNodeCompletionCallbackType callbackType) {
-                    if (callbackType == AVAudioPlayerNodeCompletionDataPlayedBack)
-                        playToneCompletionBlock();
-                    //                NSLog(@"Calling playToneCompletionBlock 2...");
+                (!self->_playerTwoNode) ?: [self->_playerTwoNode scheduleBuffer:buffer2 atTime:nil options:AVAudioPlayerNodeBufferInterruptsAtLoop completionCallbackType:AVAudioPlayerNodeCompletionDataPlayedBack completionHandler:^(AVAudioPlayerNodeCompletionCallbackType callbackType) {
+                    playToneCompletionBlock();
                 }];
                 
             }];
+            return [self->_audioEngine isRunning];
+        } else {
+            [self->_audioEngine pause];
+            
+            return [self->_audioEngine isRunning];
         }
-    }
 }
 
 NSArray<Frequencies *> * (^pairFrequencies)(NSArray<Frequencies *> *, AVAudioTime *) = ^NSArray<Frequencies *> * (NSArray<Frequencies *> * frequenciesPair, AVAudioTime *time)
@@ -393,16 +376,16 @@ double Envelope(double x, TonalEnvelope envelope)
             
         case TonalEnvelopeLongSustain:
             x_envelope = sinf(x * M_PI) * -sinf(
-                               ((Envelope(x, TonalEnvelopeAverageSustain) - (2.0 * Envelope(x, TonalEnvelopeAverageSustain)))) / 2.0)
+                                                ((Envelope(x, TonalEnvelopeAverageSustain) - (2.0 * Envelope(x, TonalEnvelopeAverageSustain)))) / 2.0)
             * (M_PI / 2.0) * 2.0;
             break;
             
         case TonalEnvelopeShortSustain:
             x_envelope = sinf(x * M_PI) * -sinf(
-                               ((Envelope(x, TonalEnvelopeAverageSustain) - (-2.0 * Envelope(x, TonalEnvelopeAverageSustain)))) / 2.0)
+                                                ((Envelope(x, TonalEnvelopeAverageSustain) - (-2.0 * Envelope(x, TonalEnvelopeAverageSustain)))) / 2.0)
             * (M_PI / 2.0) * 2.0;
             break;
-    
+            
         default:
             break;
     }
@@ -858,20 +841,24 @@ typedef void (^DataRenderedCompletionBlock)(NSArray<Frequencies *> * frequencyPa
 //    }
 //}
 
-- (void)stop
+- (BOOL)stop
 {
     //    dispatch_source_cancel(self->_timer);
     //    self->_timer = nil;
     //    dispatch_async(dispatch_get_main_queue(), ^{
     //    [self->_playerOneNode stop];
     //    [self->_playerTwoNode stop];
-    if (self.audioEngine.isRunning == YES) [self->_audioEngine pause];
+    
+    (![self.audioEngine isRunning]) ?: [self->_audioEngine pause];
+    
     //        [self.playerOneNode reset];
     //        [self.playerTwoNode reset];
     
     
-    [[NSNotificationCenter defaultCenter] postNotificationName:@"ToneBarrierPlayingNotification" object:nil userInfo:nil];
+//    [[NSNotificationCenter defaultCenter] postNotificationName:@"ToneBarrierPlayingNotification" object:nil userInfo:nil];
     //    });
+    
+    return [self.audioEngine isRunning];
 }
 
 @end

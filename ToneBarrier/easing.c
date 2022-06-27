@@ -24,16 +24,22 @@ double LinearEaseInOut(double x)
     return (x <= 0.5) ? x : 1.0 - x;
 }
 
-double NormalizedSineEaseInOut(double x, int ordinary_frequency)
+double NormalizedSineEaseInOut(double x, int ordinary_frequency, int amplitude)
 {
 //    return -(cos(x * 2 * M_PI * ordinary_frequency));
-    return sinf(x * 2 * M_PI * ordinary_frequency);
+    return (sinf(x * M_PI * amplitude)) * (sinf(x * M_PI * ordinary_frequency)); // removed x2
+}
+
+double NormalizedCosineEaseInOut(double x, int ordinary_frequency)
+{
+//    return -(cos(x * 2 * M_PI * ordinary_frequency));
+    return cosf(x * M_PI * ordinary_frequency); // removed x2
 }
 
 // Sine-pi easing
-double SinePiEaseInOutTimesFour(double x)
+double SinePiEaseInOutTimesFour(double x, int ordinary_frequency)
 {
-    return sinf(x * M_PI);
+    return sinf(x * M_PI * ordinary_frequency);
 }
 
 // Modeled after the parabola y = x^2

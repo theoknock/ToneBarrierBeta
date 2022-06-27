@@ -22,8 +22,6 @@
 #define min_amplitude 0.5f
 #define max_amplitude 1.0f
 
-@interface ViewController : UIViewController <DeviceStatusInterfaceDelegate, ToneWaveRendererDelegate, UIGestureRecognizerDelegate>
-
-@property (strong, nonatomic) UIDevice * _Nullable device;
+@interface ViewController : UIViewController <UIGestureRecognizerDelegate>
 
 @end

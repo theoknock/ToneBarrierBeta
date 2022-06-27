@@ -20,13 +20,13 @@
 typedef void (^PlayToneCompletionBlock)(void);
 typedef void (^CreateAudioBufferCompletionBlock)(AVAudioPCMBuffer * _Nonnull buffer1, AVAudioPCMBuffer * _Nonnull buffer2, PlayToneCompletionBlock _Nonnull playToneCompletionBlock);
 
-@protocol ToneBarrierPlayerDelegate <NSObject>
+//@protocol ToneBarrierPlayerDelegate <NSObject>
+//
+//- (void)createAudioBufferWithFormat:(AVAudioFormat * _Nonnull)audioFormat completionBlock:(CreateAudioBufferCompletionBlock _Nonnull)createAudioBufferCompletionBlock;
+//
+//@end
 
-- (void)createAudioBufferWithFormat:(AVAudioFormat * _Nonnull)audioFormat completionBlock:(CreateAudioBufferCompletionBlock _Nonnull)createAudioBufferCompletionBlock;
-
-@end
-
-@protocol ToneWaveRendererDelegate <NSObject>
+//@protocol ToneWaveRendererDelegate <NSObject>
 
 //- (void)drawFrequency:(double)frequency amplitude:(double)amplitude channel:(StereoChannels)channel;
 
@@ -40,15 +40,15 @@ typedef void (^CreateAudioBufferCompletionBlock)(AVAudioPCMBuffer * _Nonnull buf
 //- (void)drawFrequency:(dispatch_block_t)block
 //- (void)drawFrequency:(double)frequency amplitude:(double)amplitude channel:(StereoChannels)channel path:(CGPathRef _Nullable )path;
 
-@end
+//@end
 
 @interface ToneGenerator : NSObject
 
-@property (nonatomic, readonly) AVAudioEngine * _Nonnull audioEngine;
+//@property (nonatomic, readonly) AVAudioEngine * _Nonnull audioEngine;
 
 + (nonnull ToneGenerator *)sharedGenerator;
 
-@property (nonatomic, weak) id<ToneWaveRendererDelegate> _Nullable toneWaveRendererDelegate;
+//@property (nonatomic, weak) id<ToneWaveRendererDelegate> _Nullable toneWaveRendererDelegate;
 @property (nonatomic, strong) dispatch_source_t _Nullable timer;
 
 @property (nonatomic, readonly) AVAudioPlayerNode * _Nullable playerOneNode;
@@ -58,8 +58,6 @@ typedef void (^CreateAudioBufferCompletionBlock)(AVAudioPCMBuffer * _Nonnull buf
 
 
 
-- (void)start;
-- (void)stop;
-- (void)alarm;
+- (BOOL)togglePlay;
 
 @end
