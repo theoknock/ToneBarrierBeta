@@ -39,6 +39,7 @@
 @property (nonatomic, readonly) AVAudioUnitReverb *reverb;
 
 
+
 @end
 
 @implementation ToneGenerator
@@ -68,6 +69,8 @@ static ToneGenerator *sharedGenerator = NULL;
         
         _audioEngine = [[AVAudioEngine alloc] init];
         _mixerNode = _audioEngine.mainMixerNode;
+        [_mixerNode setRenderingAlgorithm:AVAudio3DMixingRenderingAlgorithmStereoPassThrough];
+        [_mixerNode setSourceMode:AVAudio3DMixingSourceModePointSource];
         
 //        _environmentNode = [[AVAudioEnvironmentNode alloc] init];
 //        [_environmentNode setOutputType:AVAudioEnvironmentOutputTypeHeadphones];
@@ -79,18 +82,21 @@ static ToneGenerator *sharedGenerator = NULL;
 //        [_audioEngine attachNode:_environmentNode];
         
         _submixer = [[AVAudioMixerNode alloc] init];
+        [_submixer setReverbBlend:1.0];
+        [_submixer setRenderingAlgorithm:AVAudio3DMixingRenderingAlgorithmStereoPassThrough];
+        [_submixer setSourceMode:AVAudio3DMixingSourceModePointSource];
         
         _reverb = [[AVAudioUnitReverb alloc] init];
         [_reverb loadFactoryPreset:AVAudioUnitReverbPresetLargeHall];
         [_reverb setWetDryMix:50];
         
         _playerOneNode = [[AVAudioPlayerNode alloc] init];
-        [_playerOneNode setRenderingAlgorithm:AVAudio3DMixingRenderingAlgorithmAuto];
-        [_playerOneNode setSourceMode:AVAudio3DMixingSourceModeAmbienceBed];
+        [_playerOneNode setRenderingAlgorithm:AVAudio3DMixingRenderingAlgorithmStereoPassThrough];
+        [_playerOneNode setSourceMode:AVAudio3DMixingSourceModePointSource];
         
         _playerTwoNode = [[AVAudioPlayerNode alloc] init];
-        [_playerTwoNode setRenderingAlgorithm:AVAudio3DMixingRenderingAlgorithmAuto];
-        [_playerTwoNode setSourceMode:AVAudio3DMixingSourceModeAmbienceBed];
+        [_playerTwoNode setRenderingAlgorithm:AVAudio3DMixingRenderingAlgorithmStereoPassThrough];
+        [_playerTwoNode setSourceMode:AVAudio3DMixingSourceModePointSource];
         
         [_audioEngine attachNode:_submixer];
         [_audioEngine attachNode:_reverb];
@@ -101,6 +107,7 @@ static ToneGenerator *sharedGenerator = NULL;
         [_audioEngine connect:_playerTwoNode to:_submixer format:[_playerTwoNode outputFormatForBus:0]];
 
         [_audioEngine connect:_submixer to:_reverb format:[_submixer outputFormatForBus:0]];
+        
         [_audioEngine connect:_reverb to:_mixerNode format:[_reverb outputFormatForBus:0]];
     }
     
@@ -112,7 +119,7 @@ static ToneGenerator *sharedGenerator = NULL;
     
     AVAudioSession *sessionInstance = [AVAudioSession sharedInstance];
     
-    [sessionInstance setCategory:AVAudioSessionCategoryPlayback withOptions:AVAudioSessionCategoryOptionDefaultToSpeaker error:&error];
+    [sessionInstance setCategory:AVAudioSessionCategoryPlayback error:&error];
     if (error) NSLog(@"\nsetCategory error:\n\n%@\n\n", error.debugDescription);
     if (error) NSLog(@"\nsetMode error:\n\n%@\n\n", error.debugDescription);
     [sessionInstance setPreferredOutputNumberOfChannels:4 error:&error];
@@ -156,34 +163,6 @@ static ToneGenerator *sharedGenerator = NULL;
 //}
 
 //
-
-//- (void)start
-//{
-//    static void (^recursive_block)(double, AudioBufferCompletionBlock);
-//    recursive_block = ^(double first_frequency, AudioBufferCompletionBlock audioBufferCompletionBlock)
-//    {
-//        // create audio buffer with first_frequency
-//        // generate second frequency
-//        // generate third frequency
-//        // create audio buffer with interstitial frequency by averaging first and second frequency
-//        // create audio buffer with second frequency
-//        // create audio buffer with interstitial frequency by averaging second and third frequency
-//        // return audio buffers with CreateAudioBufferCompletionBlock
-//        // pass third frequency to recursive_block as first_frequency when PlayToneCompletionBlock is called
-//        audioBufferCompletionBlock([AVAudioPCMBuffer new], ^{
-//
-//        });
-//    };
-//
-//    recursive_block((((double)arc4random() / 0x100000000) * (high_frequency - low_frequency) + low_frequency), ^(AVAudioPCMBuffer *buffer, ToneCompletionBlock toneCompletionBlock)
-//    {
-//        [self->_playerOneNode scheduleBuffer:buffer atTime:nil options:AVAudioPlayerNodeBufferInterruptsAtLoop completionCallbackType:AVAudioPlayerNodeCompletionDataPlayedBack completionHandler:^(AVAudioPlayerNodeCompletionCallbackType callbackType) {
-//            if (callbackType == AVAudioPlayerNodeCompletionDataPlayedBack)
-//                toneCompletionBlock();
-//            NSLog(@"Calling playToneCompletionBlock 2...");
-//        }];
-//    });
-//}
 
 /// / To-Do: Use dispatch_io to read buffers instead
 
@@ -533,330 +512,9 @@ void (^scheduleBuffers)(AVAudioPlayerNode *, AVAudioPlayerNode *, AVAudioFormat 
 typedef void (^DataPlayedBackCompletionBlock)(void);
 typedef void (^DataRenderedCompletionBlock)(NSArray<Frequencies *> * frequencyPair, DataPlayedBackCompletionBlock dataPlayedBackCompletionBlock);
 
-//- (void)start
-//{
-//    [[AVAudioSession sharedInstance] setActive:YES error:nil];
-//
-//    if (self.audioEngine.isRunning == NO)
-//    {
-//        NSError *error = nil;
-//        [_audioEngine startAndReturnError:&error];
-//        NSLog(@"error: %@", error);
-//        [[NSNotificationCenter defaultCenter] postNotificationName:@"ToneBarrierPlayingNotification" object:nil userInfo:nil];
-//
-//        if (![self->_playerOneNode isPlaying] || ![self->_playerTwoNode isPlaying])
-//        {
-//            [self->_playerOneNode play];
-//            [self->_playerTwoNode play];
-//        }
-//
-//        if (self->_playerOneNode && self->_playerTwoNode)
-//        {
-//            scheduleBuffers(self->_playerOneNode, self->_playerTwoNode, [self->_mixerNode outputFormatForBus:0]);
-//        }
-//    }
-//}
-
-/*
- BARRIER ONE
- */
-
-//- (void)start
-//{
-//    if (self.audioEngine.isRunning == NO)
-//    {
-//        NSError *error = nil;
-//        [_audioEngine startAndReturnError:&error];
-//        NSLog(@"error: %@", error);
-//    }
-//
-//
-//    if (self->_timer != nil) [self stop];
-//    self.timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
-//    dispatch_source_set_timer(self->_timer, DISPATCH_TIME_NOW, 2.0 * NSEC_PER_SEC, 0.0 * NSEC_PER_SEC);
-//    dispatch_source_set_event_handler(self->_timer, ^{
-//        if ([self->_playerOneNode isPlaying] || [self->_playerTwoNode isPlaying])
-//        {
-//            [self->_playerOneNode stop];
-//            [self->_playerTwoNode stop];
-//        }
-//
-//        if (self->_playerOneNode)
-//        {
-//            AVAudioTime *start_time_one = [[AVAudioTime alloc] initWithHostTime:CMClockConvertHostTimeToSystemUnits(CMClockGetTime(CMClockGetHostTimeClock()))];
-//
-//            [self->_playerOneNode scheduleBuffer:[self createAudioBufferWithLoopableSineWaveFrequency:(((double)arc4random() / 0x100000000) * (high_frequency - low_frequency) + low_frequency)] atTime:start_time_one options:AVAudioPlayerNodeBufferLoops completionHandler:^{
-//
-//            }];
-//
-//            [self->_playerOneNode scheduleBuffer:[self createAudioBufferWithLoopableSineWaveFrequency:(((double)arc4random() / 0x100000000) * (high_frequency - low_frequency) + low_frequency)] atTime:start_time_one options:AVAudioPlayerNodeBufferLoops completionHandler:^{
-//
-//            }];
-//
-//            [self->_playerOneNode play];
-//        }
-//    });
-//    dispatch_resume(self.timer);
-//}
-
-/*
- BARRIER TWO
- */
-
-// - (void)start
-// {
-//     if (self.audioEngine.isRunning == NO)
-//     {
-//         NSError *error = nil;
-//         [_audioEngine startAndReturnError:&error];
-//         NSLog(@"error: %@", error);
-//     }
-//
-//     if (self->_timer != nil) [self stop];
-//
-//     self.timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
-//     dispatch_source_set_timer(self->_timer, DISPATCH_TIME_NOW, 2.0 * NSEC_PER_SEC, 0.0 * NSEC_PER_SEC);
-//     dispatch_source_set_event_handler(self->_timer, ^{
-//         if (![self->_playerOneNode isPlaying] || ![self->_playerTwoNode isPlaying])
-//         {
-//             [self->_playerOneNode play];
-//             [self->_playerTwoNode play];
-//         }
-//
-//         if (self->_playerOneNode && self->_playerTwoNode)
-//         {
-//             AVAudioTime *start_time_one = [[AVAudioTime alloc] initWithHostTime:CMClockConvertHostTimeToSystemUnits(CMClockGetTime(CMClockGetHostTimeClock()))];
-//             double frequencyOne = (((double)arc4random() / 0x100000000) * (high_frequency - low_frequency) + low_frequency);
-//             [self->_playerOneNode scheduleBuffer:[self createAudioBufferWithLoopableSineWaveFrequency:frequencyOne] atTime:start_time_one options:AVAudioPlayerNodeBufferLoops completionHandler:^{
-////                 [self.toneWaveRendererDelegate drawFrequency:frequencyOne amplitude:1.0 channel:StereoChannelR];
-//             }];
-//
-//             float randomNum = (((double)arc4random() / 0x100000000) * (1.0 - 0.0) + 0.0); //((float)rand() / RAND_MAX) * 1;
-//             CMTime current_cmtime = CMTimeAdd(CMClockGetTime(CMClockGetHostTimeClock()), CMTimeMakeWithSeconds(randomNum, NSEC_PER_SEC));
-//             AVAudioTime *start_time_two = [[AVAudioTime alloc] initWithHostTime:CMClockConvertHostTimeToSystemUnits(current_cmtime)];
-////
-//             double frequencyTwo = (((double)arc4random() / 0x100000000) * (high_frequency - low_frequency) + low_frequency);
-//             [self->_playerTwoNode scheduleBuffer:[self createAudioBufferWithLoopableSineWaveFrequency:frequencyTwo] atTime:start_time_two options:AVAudioPlayerNodeBufferLoops completionHandler:^{
-////                 [self.toneWaveRendererDelegate drawFrequency:frequencyTwo amplitude:1.0/2.0 channel:StereoChannelL];
-//             }];
-////         }
-////
-////
-////          if (self->_playerOneNode && self->_playerTwoNode)
-////          {
-////              float randomNum = ((float)rand() / RAND_MAX) * 1;
-////              CMTime current_cmtime = CMTimeAdd(CMClockGetTime(CMClockGetHostTimeClock()), CMTimeMakeWithSeconds(randomNum, NSEC_PER_SEC));
-////              AVAudioTime *start_time_three = [[AVAudioTime alloc] initWithHostTime:CMClockConvertHostTimeToSystemUnits(current_cmtime)];
-////              double frequencyOne = (((double)arc4random() / 0x100000000) * (high_frequency - low_frequency) + low_frequency);
-////              [self->_playerOneNode scheduleBuffer:[self createAudioBufferWithLoopableSineWaveFrequency:frequencyOne] atTime:start_time_three options:AVAudioPlayerNodeBufferLoops completionHandler:^{
-//////                  [self.toneWaveRendererDelegate drawFrequency:frequencyOne amplitude:1.0 channel:StereoChannelR];
-////              }];
-////
-////              randomNum = ((float)rand() / RAND_MAX) * 1;
-////              current_cmtime = CMTimeAdd(CMClockGetTime(CMClockGetHostTimeClock()), CMTimeMakeWithSeconds(randomNum, NSEC_PER_SEC));
-////              AVAudioTime *start_time_four = [[AVAudioTime alloc] initWithHostTime:CMClockConvertHostTimeToSystemUnits(current_cmtime)];
-////
-////              double frequencyTwo = (((double)arc4random() / 0x100000000) * (high_frequency - low_frequency) + low_frequency);
-////              [self->_playerTwoNode scheduleBuffer:[self createAudioBufferWithLoopableSineWaveFrequency:frequencyTwo] atTime:start_time_four options:AVAudioPlayerNodeBufferLoops completionHandler:^{
-//////                  [self.toneWaveRendererDelegate drawFrequency:frequencyTwo amplitude:1.0/3.0 channel:StereoChannelL];
-////              }];
-//          }
-//     });
-//     dispatch_resume(self.timer);
-// }
-
-/*
- BARRIER THREE
- */
-
-//- (void)start
-//{
-//    if (self.audioEngine.isRunning == NO)
-//    {
-//        NSError *error = nil;
-//        [_audioEngine startAndReturnError:&error];
-//        NSLog(@"error: %@", error);
-//    }
-//
-//    if (self->_timer != nil) [self stop];
-//
-//    self.timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, dispatch_get_main_queue());
-//    dispatch_source_set_timer(self->_timer, DISPATCH_TIME_NOW, 2.0 * NSEC_PER_SEC, 0.0 * NSEC_PER_SEC);
-//    dispatch_source_set_event_handler(self->_timer, ^{
-//        if (![self->_playerOneNode isPlaying] || ![self->_playerTwoNode isPlaying])
-//        {
-//            [self->_playerOneNode play];
-//            [self->_playerTwoNode play];
-//        }
-//
-//        NSUInteger r = arc4random_uniform(2);
-//        switch (r) {
-//            case 1: {
-//                CMTime ctime = CMClockGetTime(CMClockGetHostTimeClock());
-//                uint64_t htime = CMClockConvertHostTimeToSystemUnits(ctime);
-//                if (self->_playerOneNode && self->_playerTwoNode)
-//                {
-//                    double freq = (((double)arc4random() / 0x100000000) * (high_frequency - low_frequency) + low_frequency);
-//                    [self->_playerOneNode scheduleBuffer:[self createAudioBufferWithLoopableSineWaveFrequency:freq]
-//                                                  atTime:[[AVAudioTime alloc] initWithHostTime:htime]
-//                                                 options:AVAudioPlayerNodeBufferLoops completionHandler:^{
-//                    }];
-//
-//                    [self->_playerTwoNode scheduleBuffer:[self createAudioBufferWithLoopableSineWaveFrequency:freq]
-//                                                  atTime:[[AVAudioTime alloc] initWithHostTime:htime]
-//                                                 options:AVAudioPlayerNodeBufferLoops completionHandler:^{
-//                    }];
-//
-//                    freq = (((double)arc4random() / 0x100000000) * (high_frequency - low_frequency) + low_frequency);
-//                    float randomNum = ((float)rand() / RAND_MAX) * 1;
-//                    [self->_playerOneNode scheduleBuffer:[self createAudioBufferWithLoopableSineWaveFrequency:freq]
-//                                                  atTime:[[AVAudioTime alloc] initWithHostTime:CMClockConvertHostTimeToSystemUnits(CMTimeAdd(ctime, CMTimeMakeWithSeconds(randomNum, NSEC_PER_SEC)))]
-//                                                 options:AVAudioPlayerNodeBufferLoops completionHandler:^{
-//                    }];
-//
-//                    [self->_playerTwoNode scheduleBuffer:[self createAudioBufferWithLoopableSineWaveFrequency:freq]
-//                                                  atTime:[[AVAudioTime alloc] initWithHostTime:CMClockConvertHostTimeToSystemUnits(CMTimeAdd(ctime, CMTimeMakeWithSeconds(randomNum, NSEC_PER_SEC)))]
-//                                                 options:AVAudioPlayerNodeBufferLoops completionHandler:^{
-//                    }];
-//
-//                    freq = (((double)arc4random() / 0x100000000) * (high_frequency - low_frequency) + low_frequency);
-//                    randomNum += ((float)rand() / RAND_MAX) * 1;
-//                    [self->_playerOneNode scheduleBuffer:[self createAudioBufferWithLoopableSineWaveFrequency:freq]
-//                                                  atTime:[[AVAudioTime alloc] initWithHostTime:CMClockConvertHostTimeToSystemUnits(CMTimeAdd(ctime, CMTimeMakeWithSeconds(randomNum, NSEC_PER_SEC)))]
-//                                                 options:AVAudioPlayerNodeBufferLoops completionHandler:^{
-//                    }];
-//
-//                    [self->_playerTwoNode scheduleBuffer:[self createAudioBufferWithLoopableSineWaveFrequency:freq]
-//                                                  atTime:[[AVAudioTime alloc] initWithHostTime:CMClockConvertHostTimeToSystemUnits(CMTimeAdd(ctime, CMTimeMakeWithSeconds(randomNum, NSEC_PER_SEC)))]
-//                                                 options:AVAudioPlayerNodeBufferLoops completionHandler:^{
-//                    }];
-//
-//                    freq = (((double)arc4random() / 0x100000000) * (high_frequency - low_frequency) + low_frequency);
-//                    randomNum += ((float)rand() / RAND_MAX) * 1;
-//                    [self->_playerOneNode scheduleBuffer:[self createAudioBufferWithLoopableSineWaveFrequency:freq]
-//                                                  atTime:[[AVAudioTime alloc] initWithHostTime:CMClockConvertHostTimeToSystemUnits(CMTimeAdd(ctime, CMTimeMakeWithSeconds(randomNum, NSEC_PER_SEC)))]
-//                                                 options:AVAudioPlayerNodeBufferLoops completionHandler:^{
-//                    }];
-//
-//                    [self->_playerTwoNode scheduleBuffer:[self createAudioBufferWithLoopableSineWaveFrequency:freq]
-//                                                  atTime:[[AVAudioTime alloc] initWithHostTime:CMClockConvertHostTimeToSystemUnits(CMTimeAdd(ctime, CMTimeMakeWithSeconds(randomNum, NSEC_PER_SEC)))]
-//                                                 options:AVAudioPlayerNodeBufferLoops completionHandler:^{
-//                    }];
-//                 }
-//                break;
-//            }
-//
-//            default: {
-//                AVAudioTime *start_time_one = [[AVAudioTime alloc] initWithHostTime:CMClockConvertHostTimeToSystemUnits(CMClockGetTime(CMClockGetHostTimeClock()))];
-//                if (self->_playerOneNode && self->_playerTwoNode)
-//                {
-//                    double frequencyOne = (((double)arc4random() / 0x100000000) * (high_frequency - low_frequency) + low_frequency);
-//                    double frequencyTwo = (((double)arc4random() / 0x100000000) * (high_frequency - low_frequency) + low_frequency);
-//                    [self->_playerOneNode scheduleBuffer:[self createAudioBufferWithLoopableSineWaveFrequency:frequencyOne] atTime:start_time_one options:AVAudioPlayerNodeBufferLoops completionHandler:^{
-//                    //                         [self.toneWaveRendererDelegate drawFrequency:frequencyOne amplitude:1.0 channel:StereoChannelR];
-//                    }];
-//
-//
-//                    [self->_playerTwoNode scheduleBuffer:[self createAudioBufferWithLoopableSineWaveFrequency:frequencyTwo] atTime:start_time_one options:AVAudioPlayerNodeBufferLoops completionHandler:^{
-//                    //                         [self.toneWaveRendererDelegate drawFrequency:frequencyTwo amplitude:1.0 channel:StereoChannelL];
-//                    }];
-//                }
-//
-//                float randomNum = ((float)rand() / RAND_MAX) * 1;
-//                CMTime current_cmtime = CMTimeAdd(CMClockGetTime(CMClockGetHostTimeClock()), CMTimeMakeWithSeconds(randomNum, NSEC_PER_SEC));
-//                AVAudioTime *start_time_two = [[AVAudioTime alloc] initWithHostTime:CMClockConvertHostTimeToSystemUnits(current_cmtime)];
-//                if (self->_playerOneNode && self->_playerTwoNode)
-//                {
-//                    double frequencyOne = (((double)arc4random() / 0x100000000) * (high_frequency - low_frequency) + low_frequency);
-//                    [self->_playerOneNode scheduleBuffer:[self createAudioBufferWithLoopableSineWaveFrequency:frequencyOne] atTime:start_time_two options:AVAudioPlayerNodeBufferLoops completionHandler:^{
-//                    //                          [self.toneWaveRendererDelegate drawFrequency:frequencyOne amplitude:1.0 channel:StereoChannelR];
-//                    }];
-//
-//                    double frequencyTwo = (((double)arc4random() / 0x100000000) * (high_frequency - low_frequency) + low_frequency);
-//                    [self->_playerTwoNode scheduleBuffer:[self createAudioBufferWithLoopableSineWaveFrequency:frequencyTwo] atTime:start_time_two options:AVAudioPlayerNodeBufferLoops completionHandler:^{
-//                    //                          [self.toneWaveRendererDelegate drawFrequency:frequencyTwo amplitude:1.0 channel:StereoChannelL];
-//                    }];
-//                }
-//                }
-//                break;
-//        }
-//
-//
-//    });
-//    dispatch_resume(self.timer);
-//}
-
-//
-//typedef NS_OPTIONS(NSUInteger, Texture) {
-//    Monophonic = 1 << 0,
-//    Heterophonic = 1 << 1
-//};
-//
-//// Phonaesthesia: the study of aesthetic properties of sounds
-//typedef NS_OPTIONS(NSUInteger, Phonaesthetic) {
-//    Cacophonic = 1 << 0,
-//    Euphonic = 1 << 1
-//};
-//
-//typedef NS_ENUM(NSUInteger, Rhythm) {
-//    Monody,
-//    Heterodony
-//};
-//
-//
-//static void (^generateTone)(AVAudioPlayerNode *) = ^(AVAudioPlayerNode *playerNode) {
-//    // Loop the number of stereoChannels
-//    AVAudioTime *start_time_one = [[AVAudioTime alloc] initWithHostTime:CMClockConvertHostTimeToSystemUnits(CMClockGetTime(CMClockGetHostTimeClock()))];
-//        double frequencyOne = (((double)arc4random() / 0x100000000) * (high_frequency - low_frequency) + low_frequency);
-//        [self->_playerOneNode scheduleBuffer:[self createAudioBufferWithLoopableSineWaveFrequency:frequencyOne] atTime:start_time_one options:AVAudioPlayerNodeBufferLoops completionHandler:^{
-//            if ([self->_playerOneNode isPlaying] && [self->_playerTwoNode isPlaying])
-//                generateTones(stereoChannels);
-//        }];
-//};
-//
-//- (void)play:(StereoChannels)stereoChannels
-//{
-//    if (self.audioEngine.isRunning == NO)
-//    {
-//        NSError *error = nil;
-//        [_audioEngine startAndReturnError:&error];
-//        NSLog(@"error: %@", error);
-//    }
-//
-//    if ((stereoChannels & StereoChannelRight) && self->_playerOneNode)
-//    {
-//        if (![self->_playerOneNode isPlaying])
-//            [self->_playerOneNode play];
-//
-//        generateTones(self->_playerOneNode);
-//
-//    }
-//
-//    if ((stereoChannels & StereoChannelLeft) && self->_playerTwoNode)
-//    {
-//        if (![self->_playerTwoNode isPlaying])
-//            [self->_playerTwoNode play];
-//
-//        generateTones(self->_playerTwoNode);
-//    }
-//}
-
 - (BOOL)stop
 {
-    //    dispatch_source_cancel(self->_timer);
-    //    self->_timer = nil;
-    //    dispatch_async(dispatch_get_main_queue(), ^{
-    //    [self->_playerOneNode stop];
-    //    [self->_playerTwoNode stop];
-    
     (![self.audioEngine isRunning]) ?: [self->_audioEngine pause];
-    
-    //        [self.playerOneNode reset];
-    //        [self.playerTwoNode reset];
-    
-    
-//    [[NSNotificationCenter defaultCenter] postNotificationName:@"ToneBarrierPlayingNotification" object:nil userInfo:nil];
-    //    });
     
     return [self.audioEngine isRunning];
 }
