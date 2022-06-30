@@ -8,9 +8,6 @@
 #import "ViewController.h"
 
 @interface ViewController ()
-{
-    BOOL _wasPlaying;
-}
 
 @property (weak, nonatomic) IBOutlet UIButton *playButton;
 @property (weak, nonatomic) IBOutlet AudioRoutePicker *audioRoutePicker;
@@ -27,7 +24,7 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     
-    [self.playButton setImage:[UIImage systemImageNamed:@"stop"] forState:UIControlStateHighlighted];
+    [self.playButton setImage:[UIImage systemImageNamed:@"stop"] forState:UIControlStateSelected];
     [self.playButton setImage:[UIImage systemImageNamed:@"play"] forState:UIControlStateNormal];
     [self.playButton setImage:[UIImage systemImageNamed:@"pause"] forState:UIControlStateDisabled];
     
@@ -45,9 +42,13 @@
 }
 
 - (IBAction)playButtonAction:(UIButton *)sender {
-    dispatch_async(dispatch_get_main_queue(), ^{
-        [sender setHighlighted:[ToneGenerator.sharedGenerator togglePlay]];
-    });
+    
+    [ToneGenerator.sharedGenerator togglePlayWithAudioEngineRunningStatusCallback:^(BOOL audioEngineRunning) {
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [sender setSelected:audioEngineRunning];
+            [sender setHighlighted:FALSE];
+        });
+    }];
 };
 
 @end

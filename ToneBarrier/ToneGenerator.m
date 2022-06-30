@@ -192,14 +192,14 @@ NSArray<NSDictionary<NSString *, id> *> *(^tonesDictionary)(void) = ^NSArray<NSD
     return tones;
 };
 
-- (BOOL)togglePlay
+- (void)togglePlayWithAudioEngineRunningStatusCallback:(void(^)(BOOL))audioEngineRunningStatus
 {
         if (![self->_audioEngine isRunning])
         {
 //            [self initAudioSession];
             
             __autoreleasing NSError *error = nil;
-            [self.audioEngine startAndReturnError:&error];
+            audioEngineRunningStatus([self.audioEngine startAndReturnError:&error]);
             if (error) NSLog(@"\nstartAndReturnError error:\n\n%@\n\n", error.debugDescription);
             
             ([self->_playerOneNode isPlaying]) ?: [self->_playerOneNode play];
@@ -219,12 +219,13 @@ NSArray<NSDictionary<NSString *, id> *> *(^tonesDictionary)(void) = ^NSArray<NSD
                 }];
                 
             }];
-            return [self->_audioEngine isRunning];
+            
         } else {
             [self->_audioEngine pause];
-            
-            return [self->_audioEngine isRunning];
+            audioEngineRunningStatus([self->_audioEngine isRunning]);
         }
+    
+    audioEngineRunningStatus([self->_audioEngine isRunning]);
 }
 
 NSArray<Frequencies *> * (^pairFrequencies)(NSArray<Frequencies *> *, AVAudioTime *) = ^NSArray<Frequencies *> * (NSArray<Frequencies *> * frequenciesPair, AVAudioTime *time)
