@@ -14,15 +14,16 @@ static const float high_frequency = 3000.0;
 static const float low_frequency  = 500.0;
 static const float min_duration   = 0.25;
 static const float max_duration   = 2.0;
+static const double PI_SQUARED = 2.0 * M_PI;
 
 
 static unsigned int fade_bit = 1;
 
 @interface ClicklessTones ()
 {
-    double frequency[2];
+//    double frequency[2];
 //    NSInteger alternate_channel_flag;
-    double duration_bifurcate;
+//    double duration_bifurcate;
 }
 
 @property (nonatomic, readonly) GKMersenneTwisterRandomSource * _Nullable randomizer;
@@ -87,6 +88,68 @@ double (^fade)(Fade, double, double) = ^double(unsigned long fadeType, double x,
     return ( (arc4random() % (max-min+1)) + min );
 }
 
+const double (^phase_validator)(double) = ^ double (double phase) {
+    if (phase >= PI_SQUARED) phase -= PI_SQUARED;
+    if (phase < 0.0)     phase += PI_SQUARED;
+    return phase;
+};
+
+static double(^randomize)(double, double, double) = ^ double (double min, double max, double weight) {
+    double random = drand48();
+    double weighted_random = pow(random, weight);
+    double frequency = (weighted_random * (max - min)) + min;
+    
+    return frequency;
+};
+
+
+const AVAudioPCMBuffer * (^tone_audio_buffer)(AVAudioFormat *) = ^ AVAudioPCMBuffer * (AVAudioFormat * audio_format) {
+    const double sample_rate = [audio_format sampleRate];
+    const AVAudioChannelCount channel_count = audio_format.channelCount;
+    const AVAudioFrameCount frame_count = sample_rate * channel_count;
+    AVAudioPCMBuffer * audio_pcm_buffer = [[AVAudioPCMBuffer alloc] initWithPCMFormat:audio_format frameCapacity:frame_count];
+    
+    for (int channel_index = 0; channel_index < channel_count; channel_index++)
+    {
+        double signal_frequency = randomize(low_frequency, high_frequency, 30.0/180.0);
+        double amplitude_frequency = ^ double (int n, int m) {
+            double result = (random() % abs(MIN(m, n) - MAX(m, n)) + MIN(m, n)) * .01;
+            return result;
+        }(25, 175);
+    }
+    return audio_pcm_buffer;
+};
+        printf("divider == %f\n", divider);
+
+        const double phase_increment = PI_SQUARED / frame_count;
+        double signal_phase = 0.0;
+        double signal_increment = signal_frequency * phase_increment;
+        double signal_increment_aux = (signal_frequency * (5.0/4.0)) * phase_increment;
+
+        double amplitude_frequency = 1.0;
+        double amplitude_phase = 0.0;
+        double amplitude_increment = (amplitude_frequency) * phase_increment;
+
+
+        if (float_channel_data[channel_index])
+            for (int buffer_index = 0; buffer_index < frame_count; buffer_index++) {
+                //                                                sinf(tremolo_phase) *
+                float_channel_data[channel_index][buffer_index] =                           sinf(amplitude_phase) * sinf(signal_phase);
+                signal_phase += ^ double (double time) { return (time < divider) ? signal_increment : signal_increment_aux; } (scale(0.0, 1.0, buffer_index, 0, frame_count));
+
+                phase_validator(signal_phase);
+                amplitude_phase += amplitude_increment;
+                phase_validator(amplitude_phase);
+                tremolo_phase += ^ double (double time) { return time * tremolo_increment; } (scale(MIN(tremolo_min, tremolo_frequency), MIN(tremolo_max, tremolo_frequency), buffer_index, 0, frame_count));
+                phase_validator(tremolo_phase);
+            }
+        chord_frequency_ratios->indices.ratio++;
+    }
+
+
+    return audio_pcm_buffer;
+};
+
 /*
  
  Updated AVAudioPCMBuffer renderer
@@ -104,12 +167,7 @@ double (^fade)(Fade, double, double) = ^double(unsigned long fadeType, double x,
  
  const double PI_2 = 2.0 * M_PI;
  const double phase_increment = PI_2 / frame_count;
- const double (^phase_validator)(double) = ^ double (double phase) {
- if (phase >= PI_2) phase -= PI_2;
- if (phase < 0.0)   phase += PI_2;
  
- return phase;
- };
  
  dispatch_queue_t samplerQueue = dispatch_queue_create("com.blogspot.demonicactivity.samplerQueue", DISPATCH_QUEUE_SERIAL);
  dispatch_block_t samplerBlock = dispatch_block_create(0, ^{
@@ -207,7 +265,6 @@ double (^fade)(Fade, double, double) = ^double(unsigned long fadeType, double x,
     
     createAudioBuffer = ^AVAudioPCMBuffer *(Fade leading_fade, double frequencyLeft, double frequencyRight)
     {
-//        AVAudioFormat *audioFormat = [self->_mixerNode outputFormatForBus:0];
         AVAudioFrameCount frameCount = audioFormat.sampleRate * (2.0 / [self generateRandomNumberBetweenMin:2 Max:4]);
         AVAudioPCMBuffer *pcmBuffer = [[AVAudioPCMBuffer alloc] initWithPCMFormat:audioFormat frameCapacity:frameCount];
         pcmBuffer.frameLength = frameCount;
@@ -218,15 +275,8 @@ double (^fade)(Fade, double, double) = ^double(unsigned long fadeType, double x,
         for (int index = 0; index < frameCount; index++)
         {
             double normalized_index = LinearInterpolation(index, frameCount);
-//            printf("left fade: %lu\n", fade_bit);
-            if (left_channel)  left_channel[index]  = fade(fade_bit, normalized_index,
-                                                           (NormalizedSineEaseInOut(normalized_index, frequencyLeft, amplitude_frequency)));
-            //
-            if (right_channel)  right_channel[index]  = fade(fade_bit, normalized_index,
-                                                             (NormalizedSineEaseInOut(normalized_index, frequencyRight, amplitude_frequency)));
-//            printf("right fade: %lu\n", fade_bit);
-            //
-            
+            if (left_channel)  left_channel[index]  = NormalizedSineEaseInOut(normalized_index, frequencyLeft, 2);
+            if (right_channel)  right_channel[index]  = NormalizedSineEaseInOut(normalized_index, frequencyRight, 2);
         }
         
         //        self->frequency[0] = (((double)arc4random() / 0x100000000) * (high_frequency - low_frequency) + low_frequency); //self->frequency[1];
