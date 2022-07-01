@@ -103,52 +103,52 @@ static double(^randomize)(double, double, double) = ^ double (double min, double
 };
 
 
-const AVAudioPCMBuffer * (^tone_audio_buffer)(AVAudioFormat *) = ^ AVAudioPCMBuffer * (AVAudioFormat * audio_format) {
-    const double sample_rate = [audio_format sampleRate];
-    const AVAudioChannelCount channel_count = audio_format.channelCount;
-    const AVAudioFrameCount frame_count = sample_rate * channel_count;
-    AVAudioPCMBuffer * audio_pcm_buffer = [[AVAudioPCMBuffer alloc] initWithPCMFormat:audio_format frameCapacity:frame_count];
-    
-    for (int channel_index = 0; channel_index < channel_count; channel_index++)
-    {
-        double signal_frequency = randomize(low_frequency, high_frequency, 30.0/180.0);
-        double amplitude_frequency = ^ double (int n, int m) {
-            double result = (random() % abs(MIN(m, n) - MAX(m, n)) + MIN(m, n)) * .01;
-            return result;
-        }(25, 175);
-    }
-    return audio_pcm_buffer;
-};
-        printf("divider == %f\n", divider);
-
-        const double phase_increment = PI_SQUARED / frame_count;
-        double signal_phase = 0.0;
-        double signal_increment = signal_frequency * phase_increment;
-        double signal_increment_aux = (signal_frequency * (5.0/4.0)) * phase_increment;
-
-        double amplitude_frequency = 1.0;
-        double amplitude_phase = 0.0;
-        double amplitude_increment = (amplitude_frequency) * phase_increment;
-
-
-        if (float_channel_data[channel_index])
-            for (int buffer_index = 0; buffer_index < frame_count; buffer_index++) {
-                //                                                sinf(tremolo_phase) *
-                float_channel_data[channel_index][buffer_index] =                           sinf(amplitude_phase) * sinf(signal_phase);
-                signal_phase += ^ double (double time) { return (time < divider) ? signal_increment : signal_increment_aux; } (scale(0.0, 1.0, buffer_index, 0, frame_count));
-
-                phase_validator(signal_phase);
-                amplitude_phase += amplitude_increment;
-                phase_validator(amplitude_phase);
-                tremolo_phase += ^ double (double time) { return time * tremolo_increment; } (scale(MIN(tremolo_min, tremolo_frequency), MIN(tremolo_max, tremolo_frequency), buffer_index, 0, frame_count));
-                phase_validator(tremolo_phase);
-            }
-        chord_frequency_ratios->indices.ratio++;
-    }
-
-
-    return audio_pcm_buffer;
-};
+//const AVAudioPCMBuffer * (^tone_audio_buffer)(AVAudioFormat *) = ^ AVAudioPCMBuffer * (AVAudioFormat * audio_format) {
+//    const double sample_rate = [audio_format sampleRate];
+//    const AVAudioChannelCount channel_count = audio_format.channelCount;
+//    const AVAudioFrameCount frame_count = sample_rate * channel_count;
+//    AVAudioPCMBuffer * audio_pcm_buffer = [[AVAudioPCMBuffer alloc] initWithPCMFormat:audio_format frameCapacity:frame_count];
+//
+//    for (int channel_index = 0; channel_index < channel_count; channel_index++)
+//    {
+//        double signal_frequency = randomize(low_frequency, high_frequency, 30.0/180.0);
+//        double amplitude_frequency = ^ double (int n, int m) {
+//            double result = (random() % abs(MIN(m, n) - MAX(m, n)) + MIN(m, n)) * .01;
+//            return result;
+//        }(25, 175);
+//    }
+//    return audio_pcm_buffer;
+//};
+//        printf("divider == %f\n", divider);
+//
+//        const double phase_increment = PI_SQUARED / frame_count;
+//        double signal_phase = 0.0;
+//        double signal_increment = signal_frequency * phase_increment;
+//        double signal_increment_aux = (signal_frequency * (5.0/4.0)) * phase_increment;
+//
+//        double amplitude_frequency = 1.0;
+//        double amplitude_phase = 0.0;
+//        double amplitude_increment = (amplitude_frequency) * phase_increment;
+//
+//
+//        if (float_channel_data[channel_index])
+//            for (int buffer_index = 0; buffer_index < frame_count; buffer_index++) {
+//                //                                                sinf(tremolo_phase) *
+//                float_channel_data[channel_index][buffer_index] =                           sinf(amplitude_phase) * sinf(signal_phase);
+//                signal_phase += ^ double (double time) { return (time < divider) ? signal_increment : signal_increment_aux; } (scale(0.0, 1.0, buffer_index, 0, frame_count));
+//
+//                phase_validator(signal_phase);
+//                amplitude_phase += amplitude_increment;
+//                phase_validator(amplitude_phase);
+//                tremolo_phase += ^ double (double time) { return time * tremolo_increment; } (scale(MIN(tremolo_min, tremolo_frequency), MIN(tremolo_max, tremolo_frequency), buffer_index, 0, frame_count));
+//                phase_validator(tremolo_phase);
+//            }
+//        chord_frequency_ratios->indices.ratio++;
+//    }
+//
+//
+//    return audio_pcm_buffer;
+//};
 
 /*
  
@@ -271,7 +271,7 @@ const AVAudioPCMBuffer * (^tone_audio_buffer)(AVAudioFormat *) = ^ AVAudioPCMBuf
         float *left_channel  = pcmBuffer.floatChannelData[0];
         float *right_channel = (audioFormat.channelCount == 2) ? pcmBuffer.floatChannelData[1] : nil;
         
-        int amplitude_frequency = arc4random_uniform(4) + 2;
+//        int amplitude_frequency = arc4random_uniform(4) + 2;
         for (int index = 0; index < frameCount; index++)
         {
             double normalized_index = LinearInterpolation(index, frameCount);
@@ -279,27 +279,16 @@ const AVAudioPCMBuffer * (^tone_audio_buffer)(AVAudioFormat *) = ^ AVAudioPCMBuf
             if (right_channel)  right_channel[index]  = NormalizedSineEaseInOut(normalized_index, frequencyRight, 2);
         }
         
-        //        self->frequency[0] = (((double)arc4random() / 0x100000000) * (high_frequency - low_frequency) + low_frequency); //self->frequency[1];
-        //        self->frequency[1] = (((double)arc4random() / 0x100000000) * (high_frequency - low_frequency) + low_frequency);
-        
         return pcmBuffer;
     };
     
     static void (^block)(void);
     block = ^void(void)
     {
-        // To combine both buffers, multiple the sum of the amplitude by the sum of the frequency/signal)
-        
         dispatch_async(dispatch_get_main_queue(), ^{
             fade_bit ^= 1;
-            createAudioBufferCompletionBlock(createAudioBuffer(fade_bit, [self->_distributor nextInt]/*(((double)arc4random() / 0x100000000) * (high_frequency - low_frequency) + low_frequency)*/, [self->_distributor nextInt] /*(((double)arc4random() / 0x100000000) * (high_frequency - low_frequency) + low_frequency)*/),
-                                             createAudioBuffer(fade_bit, [self->_distributor nextInt] /*(((double)arc4random() / 0x100000000) * (high_frequency - low_frequency) + low_frequency)*/, [self->_distributor nextInt] /*(((double)arc4random() / 0x100000000) * (high_frequency - low_frequency) + low_frequency)*/), ^{
-                //            NSLog(@"alternate_channel_flag == %ld", (long)self->alternate_channel_flag);
-                //            self->alternate_channel_flag = (self->alternate_channel_flag == 1) ? 0 : 1; // replace with bitwise XOR to toggle between 0 and 1 (self->alternate_channel_flag should be an unsigned primitive)
-                //            self->duration_bifurcate = [self->_distributor_duration nextInt]; //(((double)arc4random() / 0x100000000) * (max_duration - min_duration) + min_duration);
-                // THIS IS WRONG (BELOW)
-                //            self->frequency[0] = (((double)arc4random() / 0x100000000) * (high_frequency - low_frequency) + low_frequency); //self->frequency[1];
-                //            self->frequency[1] = (((double)arc4random() / 0x100000000) * (high_frequency - low_frequency) + low_frequency);
+            createAudioBufferCompletionBlock(createAudioBuffer(fade_bit, randomize(low_frequency, high_frequency, 0.1666666667), randomize(low_frequency, high_frequency, 0.1666666667)),
+                                             createAudioBuffer(fade_bit, randomize(low_frequency, high_frequency, 0.1666666667), randomize(low_frequency, high_frequency, 0.1666666667)), ^{
                 block();
             });
         });
