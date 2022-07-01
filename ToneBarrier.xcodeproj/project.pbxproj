@@ -38,6 +38,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		B9553671286E990A001E350B /* ToneBarrierScorePlayer-OLD.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "ToneBarrierScorePlayer-OLD.m"; sourceTree = "<group>"; };
 		B96C25AF2865F0EA00A75975 /* ClicklessTones.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ClicklessTones.m; sourceTree = "<group>"; };
 		B96C25B02865F0EA00A75975 /* ClicklessTones.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ClicklessTones.h; sourceTree = "<group>"; };
 		B96C25B22865F1A400A75975 /* easing.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = easing.c; sourceTree = "<group>"; };
@@ -115,6 +116,7 @@
 				B9869C5D28672FAC004C4E18 /* ToneGenerator.m */,
 				B96C25B02865F0EA00A75975 /* ClicklessTones.h */,
 				B96C25AF2865F0EA00A75975 /* ClicklessTones.m */,
+				B9553671286E990A001E350B /* ToneBarrierScorePlayer-OLD.m */,
 				B96C25B32865F1A400A75975 /* easing.h */,
 				B96C25B22865F1A400A75975 /* easing.c */,
 				B99077DE285AD0AF004F494E /* AppDelegate.h */,

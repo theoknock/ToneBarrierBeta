@@ -42,14 +42,16 @@
 }
 
 - (IBAction)playButtonAction:(UIButton *)sender {
+    // A block that returns a block goes here
     
-    [ToneGenerator.sharedGenerator togglePlayWithAudioEngineRunningStatusCallback:^(BOOL audioEngineRunning) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [sender setSelected:audioEngineRunning];
-            [sender setHighlighted:FALSE];
-        });
+    [ToneGenerator.sharedGenerator togglePlayWithAudioEngineRunningStatusCallback:^{
+        return ^ (BOOL audioEngineRunning) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [sender setSelected:audioEngineRunning];
+            });
+        };
     }];
-};
+}
 
 @end
 

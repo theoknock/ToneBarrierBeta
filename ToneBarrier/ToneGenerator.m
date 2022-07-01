@@ -65,12 +65,10 @@ static ToneGenerator *sharedGenerator = NULL;
     
     if (self)
     {
-        [self initAudioSession];
-        
         _audioEngine = [[AVAudioEngine alloc] init];
         _mixerNode = _audioEngine.mainMixerNode;
-        [_mixerNode setRenderingAlgorithm:AVAudio3DMixingRenderingAlgorithmStereoPassThrough];
-        [_mixerNode setSourceMode:AVAudio3DMixingSourceModePointSource];
+        [_mixerNode setRenderingAlgorithm:AVAudio3DMixingRenderingAlgorithmSoundField];
+        [_mixerNode setSourceMode:AVAudio3DMixingSourceModeSpatializeIfMono];
         
 //        _environmentNode = [[AVAudioEnvironmentNode alloc] init];
 //        [_environmentNode setOutputType:AVAudioEnvironmentOutputTypeHeadphones];
@@ -83,7 +81,7 @@ static ToneGenerator *sharedGenerator = NULL;
         
         _submixer = [[AVAudioMixerNode alloc] init];
         [_submixer setReverbBlend:1.0];
-        [_submixer setRenderingAlgorithm:AVAudio3DMixingRenderingAlgorithmStereoPassThrough];
+        [_submixer setRenderingAlgorithm:AVAudio3DMixingRenderingAlgorithmSoundField];
         [_submixer setSourceMode:AVAudio3DMixingSourceModePointSource];
         
         _reverb = [[AVAudioUnitReverb alloc] init];
@@ -91,12 +89,12 @@ static ToneGenerator *sharedGenerator = NULL;
         [_reverb setWetDryMix:50];
         
         _playerOneNode = [[AVAudioPlayerNode alloc] init];
-        [_playerOneNode setRenderingAlgorithm:AVAudio3DMixingRenderingAlgorithmStereoPassThrough];
-        [_playerOneNode setSourceMode:AVAudio3DMixingSourceModePointSource];
+        [_playerOneNode setRenderingAlgorithm:AVAudio3DMixingRenderingAlgorithmSoundField];
+        [_playerOneNode setSourceMode:AVAudio3DMixingSourceModeSpatializeIfMono];
         
         _playerTwoNode = [[AVAudioPlayerNode alloc] init];
-        [_playerTwoNode setRenderingAlgorithm:AVAudio3DMixingRenderingAlgorithmStereoPassThrough];
-        [_playerTwoNode setSourceMode:AVAudio3DMixingSourceModePointSource];
+        [_playerTwoNode setRenderingAlgorithm:AVAudio3DMixingRenderingAlgorithmSoundField];
+        [_playerTwoNode setSourceMode:AVAudio3DMixingSourceModeSpatializeIfMono];
         
         [_audioEngine attachNode:_submixer];
         [_audioEngine attachNode:_reverb];
@@ -109,6 +107,8 @@ static ToneGenerator *sharedGenerator = NULL;
         [_audioEngine connect:_submixer to:_reverb format:[_submixer outputFormatForBus:0]];
         
         [_audioEngine connect:_reverb to:_mixerNode format:[_reverb outputFormatForBus:0]];
+        
+        [self initAudioSession];
     }
     
     return self;
@@ -122,7 +122,7 @@ static ToneGenerator *sharedGenerator = NULL;
     [sessionInstance setCategory:AVAudioSessionCategoryPlayback error:&error];
     if (error) NSLog(@"\nsetCategory error:\n\n%@\n\n", error.debugDescription);
     if (error) NSLog(@"\nsetMode error:\n\n%@\n\n", error.debugDescription);
-    [sessionInstance setPreferredOutputNumberOfChannels:4 error:&error];
+    [sessionInstance setPreferredOutputNumberOfChannels:2 error:&error];
     if (error) NSLog(@"\nsetPreferredOutputNumberOfChannels error:\n\n%@\n\n", error.debugDescription);
     [sessionInstance setActive:YES error:&error];
     if (error) NSLog(@"\nsetActive error:\n\n%@\n\n", error.debugDescription);
@@ -192,15 +192,15 @@ NSArray<NSDictionary<NSString *, id> *> *(^tonesDictionary)(void) = ^NSArray<NSD
     return tones;
 };
 
-- (void)togglePlayWithAudioEngineRunningStatusCallback:(void(^)(BOOL))audioEngineRunningStatus
+- (void)togglePlayWithAudioEngineRunningStatusCallback:(void (^(^)(void))(BOOL))audioEngineRunningStatus
 {
         if (![self->_audioEngine isRunning])
         {
-//            [self initAudioSession];
-            
             __autoreleasing NSError *error = nil;
-            audioEngineRunningStatus([self.audioEngine startAndReturnError:&error]);
+            audioEngineRunningStatus()([self.audioEngine startAndReturnError:&error]);
             if (error) NSLog(@"\nstartAndReturnError error:\n\n%@\n\n", error.debugDescription);
+            
+            [self initAudioSession];
             
             ([self->_playerOneNode isPlaying]) ?: [self->_playerOneNode play];
             ([self->_playerTwoNode isPlaying]) ?: [self->_playerTwoNode play];
@@ -222,10 +222,8 @@ NSArray<NSDictionary<NSString *, id> *> *(^tonesDictionary)(void) = ^NSArray<NSD
             
         } else {
             [self->_audioEngine pause];
-            audioEngineRunningStatus([self->_audioEngine isRunning]);
+            audioEngineRunningStatus()([self.audioEngine isRunning]);
         }
-    
-    audioEngineRunningStatus([self->_audioEngine isRunning]);
 }
 
 NSArray<Frequencies *> * (^pairFrequencies)(NSArray<Frequencies *> *, AVAudioTime *) = ^NSArray<Frequencies *> * (NSArray<Frequencies *> * frequenciesPair, AVAudioTime *time)

@@ -58,6 +58,6 @@ typedef void (^CreateAudioBufferCompletionBlock)(AVAudioPCMBuffer * _Nonnull buf
 
 
 
-- (void)togglePlayWithAudioEngineRunningStatusCallback:(void(^)(BOOL))audioEngineRunningStatus;
+- (void)togglePlayWithAudioEngineRunningStatusCallback:(void (^(^)(void))(BOOL))audioEngineRunningStatus;
 
 @end
