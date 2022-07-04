@@ -129,7 +129,7 @@ import AVFoundation;
                                     result = 1.0 / (1.0 + pow(E_NUM, (-10.0 * scaled_result))); // normalize
                                     NSLog(@"mid_point ==  %f", mid_point);
                                     return result;
-                                } (random(), 11025, 77175);
+                                } (random(), 11025, 77175); // specifying duration range using indicies from a buffer of known element count: 11025 is approximately 0.25 seconds and 77175 is (probably) 1.75
                                 if (float_channel_data[channel_index])
                                     for (int buffer_index = 0; buffer_index < frame_count; buffer_index++) {
                                         if (float_channel_data) float_channel_data[channel_index][buffer_index] = sinf(sin_phase);

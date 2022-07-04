@@ -30,10 +30,11 @@ double NormalizedSineEaseInOut(double x, int ordinary_frequency, int amplitude)
     return (sinf(x * M_PI * amplitude)) * (sinf(x * M_PI * ordinary_frequency)); // removed x2
 }
 
-double NormalizedCosineEaseInOut(double x, int ordinary_frequency)
+double NormalizedCosineEaseInOut(double x, int ordinary_frequency, int amplitude)
 {
 //    return -(cos(x * 2 * M_PI * ordinary_frequency));
-    return cosf(x * M_PI * ordinary_frequency); // removed x2
+//    return cosf(x * M_PI * ordinary_frequency); // removed x2
+    return (cosf(x * M_PI * amplitude)) * (cosf(x * M_PI * ordinary_frequency));
 }
 
 // Sine-pi easing

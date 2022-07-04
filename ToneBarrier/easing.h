@@ -18,7 +18,7 @@ double LinearInterpolation(double a, double b);
 double NormalizedSineEaseInOut(double x, int ordinary_frequency, int amplitude);
 
 // Normalized cosine curve for amplitude
-double NormalizedCosineEaseInOut(double x, int ordinary_frequency);
+double NormalizedCosineEaseInOut(double x, int ordinary_frequency, int amplitude);
 
 // Linear easing
 double LinearEaseInOut(double x);
