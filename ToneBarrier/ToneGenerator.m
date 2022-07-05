@@ -11,9 +11,7 @@
 #import <GameKit/GameKit.h>
 
 #import "ToneGenerator.h"
-//#import "ToneBarrierPlayer.h"
 #import "ClicklessTones.h"
-//#import "FrequenciesPairs.h"
 #import "Frequencies.h"
 
 #include "easing.h"
@@ -22,23 +20,12 @@
 //static const float low_frequency  = 1000.0;
 
 @interface ToneGenerator ()
-{
-    bool                    _multichannelOutputEnabled;
-    
-    // mananging session and configuration changes
-    BOOL                    _isSessionInterrupted;
-    BOOL                    _isConfigChangePending;
-}
 
-@property (nonatomic, readonly) AVAudioEngine * audioEngine;
-@property (nonatomic, readonly) AVAudioMixerNode * mixerNode;
-@property (nonatomic, readonly) AVAudioPCMBuffer * pcmBufferOne;
-@property (nonatomic, readonly) AVAudioPCMBuffer * pcmBufferTwo;
-@property (nonatomic, readonly) AVAudioEnvironmentNode * environmentNode;
-@property (nonatomic, readonly) AVAudioMixerNode *submixer;
-@property (nonatomic, readonly) AVAudioUnitReverb *reverb;
-
-
+@property (nonatomic, readonly) AVAudioSession    * _audioSession;
+@property (nonatomic, readonly) AVAudioEngine     * audioEngine;
+@property (nonatomic, readonly) AVAudioMixerNode  * mixerNode;
+@property (nonatomic, readonly) AVAudioUnitReverb * reverbOne;
+@property (nonatomic, readonly) AVAudioUnitReverb * reverbTwo;
 
 @end
 
@@ -66,40 +53,32 @@ static ToneGenerator *sharedGenerator = NULL;
     if (self)
     {
         _audioEngine = [[AVAudioEngine alloc] init];
-        _mixerNode = _audioEngine.mainMixerNode;
-        [_mixerNode setRenderingAlgorithm:AVAudio3DMixingRenderingAlgorithmSoundField];
-        [_mixerNode setSourceMode:AVAudio3DMixingSourceModeSpatializeIfMono];
         
-        _submixer = [[AVAudioMixerNode alloc] init];
-        [_submixer setReverbBlend:1.0];
-        [_submixer setRenderingAlgorithm:AVAudio3DMixingRenderingAlgorithmSoundField];
-        [_submixer setSourceMode:AVAudio3DMixingSourceModePointSource];
+        _reverbOne = [[AVAudioUnitReverb alloc] init];
+        [_reverbOne loadFactoryPreset:AVAudioUnitReverbPresetLargeHall];
+        [_reverbOne setWetDryMix:50];
         
-        _reverb = [[AVAudioUnitReverb alloc] init];
-        [_reverb loadFactoryPreset:AVAudioUnitReverbPresetLargeHall];
-        [_reverb setWetDryMix:50];
+        _reverbTwo = [[AVAudioUnitReverb alloc] init];
+        [_reverbTwo loadFactoryPreset:AVAudioUnitReverbPresetLargeHall];
+        [_reverbTwo setWetDryMix:50];
         
         _playerOneNode = [[AVAudioPlayerNode alloc] init];
-        [_playerOneNode setRenderingAlgorithm:AVAudio3DMixingRenderingAlgorithmSoundField];
-        [_playerOneNode setSourceMode:AVAudio3DMixingSourceModeSpatializeIfMono];
         
         _playerTwoNode = [[AVAudioPlayerNode alloc] init];
-        [_playerTwoNode setRenderingAlgorithm:AVAudio3DMixingRenderingAlgorithmSoundField];
-        [_playerTwoNode setSourceMode:AVAudio3DMixingSourceModeSpatializeIfMono];
         
-        [_audioEngine attachNode:_submixer];
-        [_audioEngine attachNode:_reverb];
+        _mixerNode = _audioEngine.mainMixerNode;
+        [_mixerNode setReverbBlend:1.0];
+        
+        [_audioEngine attachNode:_reverbOne];
+        [_audioEngine attachNode:_reverbTwo];
         [_audioEngine attachNode:_playerOneNode];
         [_audioEngine attachNode:_playerTwoNode];
          
-        [_audioEngine connect:_playerOneNode to:_submixer format:[_playerOneNode outputFormatForBus:0]];
-        [_audioEngine connect:_playerTwoNode to:_submixer format:[_playerTwoNode outputFormatForBus:0]];
-
-        [_audioEngine connect:_submixer to:_reverb format:[_submixer outputFormatForBus:0]];
+        [_audioEngine connect:_playerOneNode to:_reverbOne format:[_reverbOne outputFormatForBus:0]];
+        [_audioEngine connect:_playerTwoNode to:_reverbTwo format:[_reverbTwo outputFormatForBus:0]];
         
-        [_audioEngine connect:_reverb to:_mixerNode format:[_reverb outputFormatForBus:0]];
-        
-        if ([self.audioEngine startAndReturnError:nil]) [self initAudioSession];
+        [_audioEngine connect:_reverbOne to:_mixerNode format:[_mixerNode outputFormatForBus:0]];
+        [_audioEngine connect:_reverbTwo to:_mixerNode format:[_mixerNode outputFormatForBus:0]];
     }
     
     return self;
@@ -111,20 +90,15 @@ static ToneGenerator *sharedGenerator = NULL;
     AVAudioSession *sessionInstance = [AVAudioSession sharedInstance];
     
     [sessionInstance setCategory:AVAudioSessionCategoryPlayback error:&error];
-    if (error) NSLog(@"\nsetCategory error:\n\n%@\n\n", error.debugDescription);
-    if (error) NSLog(@"\nsetMode error:\n\n%@\n\n", error.debugDescription);
     [sessionInstance setPreferredOutputNumberOfChannels:2 error:&error];
-    if (error) NSLog(@"\nsetPreferredOutputNumberOfChannels error:\n\n%@\n\n", error.debugDescription);
+    [sessionInstance setPreferredInputNumberOfChannels:2 error:&error];
     [sessionInstance setActive:YES error:&error];
-    if (error) NSLog(@"\nsetActive error:\n\n%@\n\n", error.debugDescription);
 }
 
 - (float)generateRandomNumberBetweenMin:(int)min Max:(int)max
 {
     return ( (arc4random() % (max-min+1)) + min );
 }
-
-
 
 - (AVAudioPCMBuffer *)createAudioBufferWithLoopableSineWaveFrequency:(NSUInteger)frequency
 {
@@ -166,8 +140,11 @@ static const float low_frequency  = 1000.0;
             if (error) NSLog(@"\nstartAndReturnError error:\n\n%@\n\n", error.debugDescription);
             audioEngineRunningStatus()([self.audioEngine isRunning]);
             
-            ([self->_playerOneNode isPlaying]) ?: [self->_playerOneNode play];
-            ([self->_playerTwoNode isPlaying]) ?: [self->_playerTwoNode play];
+            const AVAudioFormat * audio_format      = [_mixerNode outputFormatForBus:0];
+            const AVAudioChannelCount channel_count = audio_format.channelCount;
+            const AVAudioFrameCount frame_count     = audio_format.sampleRate * channel_count;
+            ([self->_playerOneNode isPlaying]) ?: ^{ [self->_playerOneNode prepareWithFrameCount:frame_count]; [self->_playerOneNode play]; }();
+            ([self->_playerTwoNode isPlaying]) ?: ^{ [self->_playerTwoNode prepareWithFrameCount:frame_count]; [self->_playerTwoNode play]; }();
             
             [[ClicklessTones sharedClicklessTones] createAudioBufferWithFormat:[_mixerNode outputFormatForBus:0] completionBlock:^(AVAudioPCMBuffer * _Nonnull buffer1, AVAudioPCMBuffer * _Nonnull buffer2, PlayToneCompletionBlock playToneCompletionBlock) {
                 (!self->_playerOneNode) ?: [self->_playerOneNode scheduleBuffer:buffer1 atTime:nil options:AVAudioPlayerNodeBufferInterruptsAtLoop completionCallbackType:AVAudioPlayerNodeCompletionDataPlayedBack completionHandler:^(AVAudioPlayerNodeCompletionCallbackType callbackType) {
@@ -185,50 +162,6 @@ static const float low_frequency  = 1000.0;
         }
 }
 
-NSArray<Frequencies *> * (^pairFrequencies)(NSArray<Frequencies *> *, AVAudioTime *) = ^NSArray<Frequencies *> * (NSArray<Frequencies *> * frequenciesPair, AVAudioTime *time)
-{
-    NSMutableArray<Frequencies *> *pairs = [NSMutableArray new];
-    [pairs addObject:[[Frequencies alloc] initWithFrequency1:frequenciesPair.lastObject.frequency1.doubleValue
-                                                  frequency2:frequenciesPair.lastObject.frequency2.doubleValue
-                                               stereoChannel:(StereoChannel)frequenciesPair.lastObject.channel.unsignedIntValue
-                                                        time:time]];
-    [pairs addObject:[[Frequencies alloc] initWithFrequency1:(((double)arc4random() / 0x100000000) * (high_frequency - low_frequency) + low_frequency)
-                                                  frequency2:(((double)arc4random() / 0x100000000) * (high_frequency - low_frequency) + low_frequency)
-                                               stereoChannel:((StereoChannel)frequenciesPair.lastObject.channel.unsignedIntValue == StereoChannelRight) ? StereoChannelLeft : StereoChannelRight
-                                                        time:time]];
-    
-    NSLog(@"Return frequencies (1st): %f\t%f", pairs.firstObject.frequency1.doubleValue, pairs.firstObject.frequency2.doubleValue);
-    NSLog(@"Return frequencies (2nd): %f\t%f", pairs.lastObject.frequency1.doubleValue, pairs.lastObject.frequency2.doubleValue);
-    NSLog(@"Time: %f", [AVAudioTime secondsForHostTime:[pairs.firstObject.time hostTime]]);
-    
-    return (NSArray<Frequencies *> *)pairs;
-};
-
-AVAudioTime *(^bufferSchedule)(CMTime, NSUInteger) = ^AVAudioTime *(CMTime current_time, NSUInteger count)
-{
-    CMTime scheduled_time = CMTimeAdd(current_time, CMTimeMakeWithSeconds(count, NSEC_PER_SEC));
-    AVAudioTime *time = [[AVAudioTime alloc] initWithHostTime:CMClockConvertHostTimeToSystemUnits(scheduled_time)];
-    
-    return time;
-};
-
-NSArray<NSArray<Frequencies *> *> *(^scoreFrequenciesPairs)(void) = ^NSArray<NSArray<Frequencies *> *> *(void)
-{
-    __block NSMutableArray *score = [NSMutableArray new];
-    CMTime current_time = CMClockGetTime(CMClockGetHostTimeClock());
-    __block NSUInteger count = 0;
-    static void (^block)(Frequencies *);
-    block = ^void(Frequencies *returnFrequencies)
-    {
-        NSArray<Frequencies *> *frequenciesPair = pairFrequencies(returnFrequencies, bufferSchedule(current_time, count++));
-        [score addObject:frequenciesPair];
-        if (score.count < 90) block([frequenciesPair lastObject]);
-        //        if ([ToneGenerator.sharedGenerator.audioEngine isRunning]) block([frequenciesPair lastObject]); // Can't do this without a completion block that returns every frequenciesPair array
-    };
-    block(nil);
-    
-    return score;
-};
 
 double Normalize(double a, double b)
 {
@@ -446,35 +379,7 @@ AVAudioPCMBuffer * (^audioBufferFromFrequencies)(Frequencies *, AVAudioFormat *)
     return pcmBuffer;
 };
 
-void (^scheduleBuffers)(AVAudioPlayerNode *, AVAudioPlayerNode *, AVAudioFormat *) = ^void(AVAudioPlayerNode *playerNode1, AVAudioPlayerNode *playerNode2, AVAudioFormat *audioFormat)
-{
-    // TO-DO:
-    // Create a new frequency object
-    // Pass it to the audio buffer block
-    // Use
-    
-//    AVAudioTime *time = [[AVAudioTime alloc] initWithHostTime:CMClockConvertHostTimeToSystemUnits(CMClockGetTime(CMClockGetHostTimeClock()))];
-    NSArray<NSArray<Frequencies *> *> *score = (NSArray<NSArray<Frequencies *> *> *)[NSArray arrayWithArray:scoreFrequenciesPairs()];
-    for (NSUInteger index = 0; index < score.count; index++)  // (NSArray<Frequencies *> *frequencyPair in score)
-    {
-        NSArray<Frequencies *> *frequencyPair = (NSArray<Frequencies *> *)[score objectAtIndex:index];
-        [playerNode1 scheduleBuffer:audioBufferFromFrequencies([frequencyPair firstObject], audioFormat) atTime:[[frequencyPair firstObject] time] options:AVAudioPlayerNodeBufferInterruptsAtLoop completionCallbackType:AVAudioPlayerNodeCompletionDataPlayedBack completionHandler:^(AVAudioPlayerNodeCompletionCallbackType callbackType) {
-            NSLog(@"%lu Played frequencies (1st): %f\t%f\t%f", index, frequencyPair.firstObject.frequency1.doubleValue, frequencyPair.firstObject.frequency2.doubleValue, [AVAudioTime secondsForHostTime:[frequencyPair.firstObject.time hostTime]]);
-        }];
-        [playerNode2 scheduleBuffer:audioBufferFromFrequencies([frequencyPair lastObject], audioFormat) atTime:[[frequencyPair lastObject] time] options:AVAudioPlayerNodeBufferInterruptsAtLoop completionCallbackType:AVAudioPlayerNodeCompletionDataPlayedBack completionHandler:^(AVAudioPlayerNodeCompletionCallbackType callbackType) {
-           NSLog(@"%lu Played frequencies (2nd): %f\t%f\t%f", index, frequencyPair.lastObject.frequency1.doubleValue, frequencyPair.lastObject.frequency2.doubleValue, [AVAudioTime secondsForHostTime:[frequencyPair.lastObject.time hostTime]]);
-        }];
-    }
-};
-
 typedef void (^DataPlayedBackCompletionBlock)(void);
 typedef void (^DataRenderedCompletionBlock)(NSArray<Frequencies *> * frequencyPair, DataPlayedBackCompletionBlock dataPlayedBackCompletionBlock);
-
-- (BOOL)stop
-{
-    (![self.audioEngine isRunning]) ?: [self->_audioEngine pause];
-    
-    return [self.audioEngine isRunning];
-}
 
 @end
