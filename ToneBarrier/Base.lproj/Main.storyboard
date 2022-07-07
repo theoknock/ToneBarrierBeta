@@ -16,13 +16,16 @@
                         <rect key="frame" x="0.0" y="0.0" width="390" height="844"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <subviews>
-                            <imageView clipsSubviews="YES" userInteractionEnabled="NO" alpha="0.14999999999999999" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" image="waveform.path" catalog="system" translatesAutoresizingMaskIntoConstraints="NO" id="p0y-QY-MZd">
+                            <imageView opaque="NO" clipsSubviews="YES" userInteractionEnabled="NO" alpha="0.14999999999999999" contentMode="scaleAspectFit" horizontalHuggingPriority="251" verticalHuggingPriority="251" fixedFrame="YES" image="waveform.path" catalog="system" translatesAutoresizingMaskIntoConstraints="NO" id="p0y-QY-MZd">
                                 <rect key="frame" x="0.0" y="1" width="390" height="844"/>
                                 <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                                 <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <color key="tintColor" systemColor="linkColor"/>
                             </imageView>
                             <button opaque="NO" contentMode="scaleAspectFit" contentHorizontalAlignment="center" contentVerticalAlignment="center" adjustsImageWhenHighlighted="NO" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="CxI-Ah-rhD" userLabel="Play Button">
                                 <rect key="frame" x="-188" y="363" width="766" height="128.33333333333337"/>
+                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <color key="tintColor" systemColor="linkColor"/>
                                 <state key="normal" title="Button"/>
                                 <buttonConfiguration key="configuration" style="plain" image="play" catalog="system">
                                     <backgroundConfiguration key="background">
@@ -30,15 +33,16 @@
                                         <color key="strokeColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                     </backgroundConfiguration>
                                     <preferredSymbolConfiguration key="preferredSymbolConfigurationForImage" configurationType="pointSize" pointSize="96" weight="ultraLight"/>
+                                    <color key="baseForegroundColor" systemColor="linkColor"/>
                                 </buttonConfiguration>
                                 <connections>
                                     <action selector="playButtonAction:" destination="9it-0F-OTs" eventType="touchUpInside" id="tom-dm-lhH"/>
                                 </connections>
                             </button>
-                            <view opaque="NO" contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="X1F-ma-vgH" customClass="AudioRoutePicker">
+                            <view opaque="NO" contentMode="scaleAspectFit" translatesAutoresizingMaskIntoConstraints="NO" id="X1F-ma-vgH" customClass="AudioRoutePicker">
                                 <rect key="frame" x="0.0" y="758.66666666666663" width="390" height="51.333333333333371"/>
                                 <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
-                                <color key="tintColor" systemColor="tintColor"/>
+                                <color key="tintColor" systemColor="systemBlueColor"/>
                             </view>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="czV-Br-Vf9"/>
@@ -66,7 +70,10 @@
     <resources>
         <image name="play" catalog="system" width="117" height="128"/>
         <image name="waveform.path" catalog="system" width="128" height="113"/>
-        <systemColor name="tintColor">
+        <systemColor name="linkColor">
+            <color red="0.0" green="0.47843137254901963" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
+        </systemColor>
+        <systemColor name="systemBlueColor">
             <color red="0.0" green="0.47843137254901963" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>
         </systemColor>
     </resources>

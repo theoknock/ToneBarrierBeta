@@ -9,28 +9,36 @@
 #import <Foundation/Foundation.h>
 #import <GameKit/GameKit.h>
 #import "ToneGenerator.h"
+#include <stdio.h>
+#include <stdlib.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
-static double (^scale)(double, double, double, double, double) = ^ double (double min_new, double max_new, double val_old, double min_old, double max_old) {
-    double val_new = min_new + ((((val_old - min_old) * (max_new - min_new))) / (max_old - min_old));
-
-    return val_new;
+static double (^(^signal_time)(AVAudioFramePosition *, AVAudioFrameCount))(void) = ^ (AVAudioFramePosition * time, AVAudioFrameCount frames) {
+    return ^ double {
+        return (double)((double)(*time) / frames);
+    };
 };
 
-static double (^random_source_drand48)(double, double) = ^ double (double lower_bound, double higher_bound) {
-    double random = drand48();
-    double result = (random * (higher_bound - lower_bound)) + lower_bound;
 
-    return result;
+static double (^(^signal_frequency)(double *))(double) = ^ (double * time) {
+    return ^ double (double frequency) {
+        return sin(2.0 * (*time * M_PI * frequency));// pow(sinf(M_PI * time * 1000.0), 2.0);
+    };
 };
 
-static double (^random_distributor_gaussian_mean_standard_deviation)(double, double, double, double) = ^ double (double lower_bound, double upper_bound, double mean, double standard_deviation) {
-    double result        = sqrt(1 / (2 * M_PI * standard_deviation)) * exp(-(1 / (2 * standard_deviation)) * (random_source_drand48(lower_bound, upper_bound) - mean) * 2);
-    printf("\n\nresult == %d\n", result);
-    double scaled_result = scale(0.0, 1.0, result, lower_bound, upper_bound);
-    printf("scaled_result == %d\n\n", scaled_result);
-    return scaled_result;
+static double (^(^signal_amplitude)(double *))(double) = ^ (double * time) {
+    return ^ double (double amplitude) {
+        return sin(*time * M_PI * amplitude);
+    };
+};
+
+static double (^(^(^sample_signal)(double *))(double, double))(void) = ^ (double * time) {
+    return ^ (double frequency, double amplitude) {
+        return ^ double {
+            return (signal_frequency(time))(frequency) * (signal_amplitude(time))(amplitude);
+        };
+    };
 };
 
 @interface ClicklessTones : NSObject // <ToneBarrierPlayerDelegate>

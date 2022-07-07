@@ -16,16 +16,17 @@
 
 #include "easing.h"
 
-//static const float high_frequency = 6000.0;
-//static const float low_frequency  = 1000.0;
 
 @interface ToneGenerator ()
 
-@property (nonatomic, readonly) AVAudioSession    * _audioSession;
-@property (nonatomic, readonly) AVAudioEngine     * audioEngine;
-@property (nonatomic, readonly) AVAudioMixerNode  * mixerNode;
-@property (nonatomic, readonly) AVAudioUnitReverb * reverbOne;
-@property (nonatomic, readonly) AVAudioUnitReverb * reverbTwo;
+@property (nonatomic, strong) AVAudioSession    * audioSession;
+@property (nonatomic, strong) AVAudioEngine     * audioEngine;
+@property (nonatomic, strong) NSSet * playerNodes;
+@property (nonatomic, strong) AVAudioPlayerNode * playerNode;
+@property (nonatomic, strong) AVAudioMixerNode  * submixerNode;
+@property (nonatomic, strong) AVAudioMixerNode  * mixerNode;
+@property (nonatomic, strong) AVAudioOutputNode * outputNode;
+@property (nonatomic, strong) AVAudioUnitReverb * reverb;
 
 @end
 
@@ -46,6 +47,121 @@ static ToneGenerator *sharedGenerator = NULL;
     return sharedGenerator;
 }
 
+static AVAudioPlayerNode * (^player_node)(AVAudioEngine *, AVAudioMixerNode *) = ^ AVAudioPlayerNode * (AVAudioEngine * audio_engine, AVAudioMixerNode * sub_mixer) {
+    AVAudioPlayerNode * player = [[AVAudioPlayerNode alloc] init];
+    [audio_engine attachNode:player];
+    [audio_engine connect:player to:sub_mixer format:[audio_engine.outputNode outputFormatForBus:0]];
+    
+    return player;
+};
+
+//Block_copy((typeof(unsigned long(^*)(void)))CFBridgingRetain(integrand_block));
+
+typedef const id * _Nonnull stored_object;
+typedef stored_object (^storable_object)(void);
+storable_object storable = ^ const id * _Nonnull {
+    AVAudioPlayerNode * player = [[AVAudioPlayerNode alloc] init];
+    return (stored_object)CFBridgingRetain(player);
+};
+
+typedef stored_object (^unstored_object)(void);
+stored_object (^(^ _Nonnull store_object)(storable_object))(void) = ^ unstored_object (storable_object storable) {
+    stored_object stored = storable();
+    return ^ stored_object {
+        return stored;
+    };
+};
+
+
+
+
+//static void (^map)(const unsigned long) = ^ (const unsigned long count) {
+//
+//    typedef typeof(unstored_object) integrands[count];
+//    typeof(integrands) integrands_ptr[count];
+//    ^ (const id * _Nonnull integrands_t, const unsigned long index_count) {
+//        __block unsigned long (^recursive_block)(unsigned long);
+//        return ^ (void(^enumeration)(const id *)) {
+//            return (recursive_block = ^ unsigned long (unsigned long index) {
+//                --index;
+//                const id * object_t = (const id * const)CFBridgingRetain((__bridge id)((__bridge const void * _Nonnull)(*((id * const)integrands_t + count))));
+//                enumeration(object_t);
+//                return (unsigned long)(index ^ 0UL) && (unsigned long)(recursive_block)(index);
+//            })(index_count);
+//        };
+//    }(^ const id * _Nonnull (const id * _Nonnull integrands_t) {
+//        *((id * const)integrands_t + count) = (__bridge id)((__bridge const void * _Nonnull)CFBridgingRelease(store_object(storable)));
+//        return (const id *)(integrands_t);
+//    }((const id *)&integrands_ptr), count);
+//};
+
+
+//CFTypeRef (^object)(const unsigned long) = ^ CFTypeRef (const unsigned long index) {
+//    UIButton * button;
+//    [button = [UIButton new] setTag:index];
+//    printf("\nobject == %p\n", button);
+//    return (CFTypeRef)CFBridgingRetain(button);
+//};
+//
+
+//
+//static void(^persistent_object)(void) = ^{
+//
+//};
+//
+//typedef typeof(unsigned long (^)(unsigned long)) iterator;
+//typedef typeof(CFTypeRef(^__strong)(const unsigned long)) mapper;
+//typedef typeof(void(^)(void(^ _Nonnull __strong)(CFTypeRef))) applier;
+//static void (^(^(^iterate_)(const unsigned long))(typeof(mapper)))(void(^)(CFTypeRef)) = ^ (const unsigned long iterations) {
+//    CFTypeRef obj_collection[iterations];
+//    return ^ (CFTypeRef obj_collection_t) {
+//        __block iterator integrand;
+//        return ^ (mapper map) {
+//            (integrand = ^ unsigned long (unsigned long index) {
+//                --index;
+////                *((id * const)obj_collection_t + index) =
+//                map(index);
+//                return (unsigned long)(index ^ 0UL) && (unsigned long)(integrand)(index);
+//            })(iterations);
+//            return ^ (applier apply) {
+//                (integrand = ^ unsigned long (unsigned long index) {
+//                    --index;
+////                    const id * button_t = (const id * const)CFBridgingRetain((__bridge id)((__bridge const void * _Nonnull)(*((id * const)obj_collection_t + index))));
+//                    apply(obj_collection_t + index);
+////                    apply((const id _Nonnull * _Nonnull const)(*((id * const)obj_collection_t + index)));
+//                    return (unsigned long)(index ^ 0UL) && (unsigned long)(integrand)(index);
+//                })(iterations);
+//            };
+//        };
+//    }(&obj_collection);
+//};
+
+
+id (^retainable_object)(id(^)(void)) = ^ id (id(^object)(void)) {
+    return ^{
+        return object();
+    };
+};
+
+id (^(^retain_object)(id(^)(void)))(void) = ^ (id(^retainable_object)(void)) {
+    id retained_object = retainable_object();
+    return ^ id {
+        return retained_object;
+    };
+};
+
+//static id (^(^map)(const unsigned long))(id(^)(void)) = ^ (const unsigned long object_count) {
+//    
+//    typedef typeof(id(^)(void)) retained_objects[object_count];
+//    typeof(retained_objects) retained_objects_ref[object_count];
+//    
+//    ^ (const id * _Nonnull retained_objects_t, const unsigned long index_count) {
+//        return ^ id (id(^object)(void)) {
+//            return object();
+//        };
+//    }((const id *)retained_objects_ref, object_count);
+//};
+
 - (instancetype)init
 {
     self = [super init];
@@ -53,46 +169,50 @@ static ToneGenerator *sharedGenerator = NULL;
     if (self)
     {
         _audioEngine = [[AVAudioEngine alloc] init];
+        _outputNode = [_audioEngine outputNode];
         
-        _reverbOne = [[AVAudioUnitReverb alloc] init];
-        [_reverbOne loadFactoryPreset:AVAudioUnitReverbPresetLargeHall];
-        [_reverbOne setWetDryMix:50];
+        _submixerNode = [[AVAudioMixerNode alloc] init];
+        [_audioEngine attachNode:_submixerNode];
         
-        _reverbTwo = [[AVAudioUnitReverb alloc] init];
-        [_reverbTwo loadFactoryPreset:AVAudioUnitReverbPresetLargeHall];
-        [_reverbTwo setWetDryMix:50];
+        _reverb = [[AVAudioUnitReverb alloc] init];
+        [_reverb loadFactoryPreset:AVAudioUnitReverbPresetLargeHall];
+        [_reverb setWetDryMix:50];
+        [_audioEngine attachNode:_reverb];
         
-        _playerOneNode = [[AVAudioPlayerNode alloc] init];
+        id (^player_node_object)(void) = ^ id {
+            AVAudioPlayerNode * player = [[AVAudioPlayerNode alloc] init];
+            return player;
+        };
+
+        _playerNodes = [[NSSet alloc] initWithArray:@[retain_object(retainable_object(player_node_object)), retain_object(retainable_object(player_node_object))]];
+        [_playerNodes enumerateObjectsUsingBlock:^(id(^retained_object)(void), BOOL * _Nonnull stop) {
+            AVAudioPlayerNode * player_node = (AVAudioPlayerNode *)retained_object();
+            [_audioEngine attachNode:player_node];
+            [_audioEngine connect:player_node to:_submixerNode format:[_outputNode outputFormatForBus:0]];
+        }];
         
-        _playerTwoNode = [[AVAudioPlayerNode alloc] init];
+        [_audioEngine connect:_submixerNode to:_reverb format:[_outputNode outputFormatForBus:0]];
         
         _mixerNode = _audioEngine.mainMixerNode;
         [_mixerNode setReverbBlend:1.0];
         
-        [_audioEngine attachNode:_reverbOne];
-        [_audioEngine attachNode:_reverbTwo];
-        [_audioEngine attachNode:_playerOneNode];
-        [_audioEngine attachNode:_playerTwoNode];
-         
-        [_audioEngine connect:_playerOneNode to:_reverbOne format:[_reverbOne outputFormatForBus:0]];
-        [_audioEngine connect:_playerTwoNode to:_reverbTwo format:[_reverbTwo outputFormatForBus:0]];
-        
-        [_audioEngine connect:_reverbOne to:_mixerNode format:[_mixerNode outputFormatForBus:0]];
-        [_audioEngine connect:_reverbTwo to:_mixerNode format:[_mixerNode outputFormatForBus:0]];
+        [_audioEngine connect:_reverb to:_mixerNode format:[_outputNode outputFormatForBus:0]];
     }
     
     return self;
 }
 
-- (void)initAudioSession {
+- (NSError *)configureAudioSession {
     __autoreleasing NSError *error = nil;
     
-    AVAudioSession *sessionInstance = [AVAudioSession sharedInstance];
+    _audioSession = [AVAudioSession sharedInstance];
+    [_audioSession setSupportsMultichannelContent:TRUE error:&error];
+    [_audioSession setCategory:AVAudioSessionCategoryPlayback mode:AVAudioSessionModeDefault routeSharingPolicy:AVAudioSessionRouteSharingPolicyDefault options:AVAudioSessionCategoryOptionAllowAirPlay error:&error];
+    [_audioSession setPreferredOutputNumberOfChannels:2 error:&error];
+    [_audioSession setPreferredInputNumberOfChannels:2 error:&error];
+    [_audioSession setActive:YES error:&error];
     
-    [sessionInstance setCategory:AVAudioSessionCategoryPlayback error:&error];
-    [sessionInstance setPreferredOutputNumberOfChannels:2 error:&error];
-    [sessionInstance setPreferredInputNumberOfChannels:2 error:&error];
-    [sessionInstance setActive:YES error:&error];
+    return error;
 }
 
 - (float)generateRandomNumberBetweenMin:(int)min Max:(int)max
@@ -100,286 +220,182 @@ static ToneGenerator *sharedGenerator = NULL;
     return ( (arc4random() % (max-min+1)) + min );
 }
 
-- (AVAudioPCMBuffer *)createAudioBufferWithLoopableSineWaveFrequency:(NSUInteger)frequency
+- (AVAudioFormat *)configureAudioFormat
 {
-    AVAudioFormat *mixerFormat = [_mixerNode outputFormatForBus:0];
-    NSUInteger randomNum = [self generateRandomNumberBetweenMin:1 Max:4];
-    double frameLength = mixerFormat.sampleRate / randomNum;
-    AVAudioPCMBuffer *pcmBuffer = [[AVAudioPCMBuffer alloc] initWithPCMFormat:mixerFormat frameCapacity:frameLength];
-    pcmBuffer.frameLength = frameLength;
-
-    float *leftChannel = pcmBuffer.floatChannelData[0];
-    float *rightChannel = mixerFormat.channelCount == 2 ? pcmBuffer.floatChannelData[1] : nil;
-
-    NSUInteger r = arc4random_uniform(2);
-    double amplitude_step  = (1.0 / frameLength > 0.000100) ? (((double)arc4random() / 0x100000000) * (0.000100 - 0.000021) + 0.000021) : 1.0 / frameLength;
-    double amplitude_value = 0.0;
-    for (int i_sample = 0; i_sample < pcmBuffer.frameCapacity; i_sample++)
-    {
-        amplitude_value += amplitude_step;
-        double amplitude = pow(((r == 1) ? ((amplitude_value < 1.0) ? (amplitude_value) : 1.0) : ((1.0 - amplitude_value > 0.0) ? 1.0 - (amplitude_value) : 0.0)), ((r == 1) ? randomNum : 1.0/randomNum));
-        amplitude = ((amplitude < 0.000001) ? 0.000001 : amplitude);
-        double value = sinf((frequency*i_sample*2*M_PI) / mixerFormat.sampleRate);
-        if (leftChannel)  leftChannel[i_sample]  = value * amplitude;
-        if (rightChannel) rightChannel[i_sample] = value * (1.0 - amplitude);
-    }
-
-    return pcmBuffer;
+//    AVAudioFormat * audio_format = nil;
+//    AVAudioChannelCount channel_count = [_outputNode outputFormatForBus:0].channelCount;
+//    AVAudioChannelLayout * channel_layout = [[AVAudioChannelLayout alloc] initWithLayoutTag:kAudioChannelLayoutTag_Stereo]; // or ...channels:channel_count];
+    AVAudioFormat * audio_format = [[AVAudioFormat alloc] initStandardFormatWithSampleRate:[_outputNode outputFormatForBus:0].sampleRate channelLayout:[_outputNode outputFormatForBus:0].channelLayout];
+//
+    
+    return audio_format;
 }
-
-static const float high_frequency = 6000.0;
-static const float low_frequency  = 1000.0;
-
 
 - (void)togglePlayWithAudioEngineRunningStatusCallback:(void (^(^)(void))(BOOL))audioEngineRunningStatus
 {
-        if (![self->_audioEngine isRunning])
-        {
-            __autoreleasing NSError *error = nil;
-            if ([self.audioEngine startAndReturnError:nil]) [self initAudioSession];
-            if (error) NSLog(@"\nstartAndReturnError error:\n\n%@\n\n", error.debugDescription);
-            audioEngineRunningStatus()([self.audioEngine isRunning]);
-            
-            const AVAudioFormat * audio_format      = [_mixerNode outputFormatForBus:0];
-            const AVAudioChannelCount channel_count = audio_format.channelCount;
-            const AVAudioFrameCount frame_count     = audio_format.sampleRate * channel_count;
-            ([self->_playerOneNode isPlaying]) ?: ^{ [self->_playerOneNode prepareWithFrameCount:frame_count]; [self->_playerOneNode play]; }();
-            ([self->_playerTwoNode isPlaying]) ?: ^{ [self->_playerTwoNode prepareWithFrameCount:frame_count]; [self->_playerTwoNode play]; }();
-            
-            [[ClicklessTones sharedClicklessTones] createAudioBufferWithFormat:[_mixerNode outputFormatForBus:0] completionBlock:^(AVAudioPCMBuffer * _Nonnull buffer1, AVAudioPCMBuffer * _Nonnull buffer2, PlayToneCompletionBlock playToneCompletionBlock) {
-                (!self->_playerOneNode) ?: [self->_playerOneNode scheduleBuffer:buffer1 atTime:nil options:AVAudioPlayerNodeBufferInterruptsAtLoop completionCallbackType:AVAudioPlayerNodeCompletionDataPlayedBack completionHandler:^(AVAudioPlayerNodeCompletionCallbackType callbackType) {
-                   
-                }];
-                
-                (!self->_playerTwoNode) ?: [self->_playerTwoNode scheduleBuffer:buffer2 atTime:nil options:AVAudioPlayerNodeBufferInterruptsAtLoop completionCallbackType:AVAudioPlayerNodeCompletionDataPlayedBack completionHandler:^(AVAudioPlayerNodeCompletionCallbackType callbackType) {
-                    playToneCompletionBlock();
+    if (![self->_audioEngine isRunning])
+    {
+        __autoreleasing NSError *error = nil;
+        audioEngineRunningStatus()([self.audioEngine startAndReturnError:&error] && [self.audioEngine isRunning]);
+        (!error) ? [self configureAudioSession] : NSLog(@"\nstartAndReturnError error:\n\n%@\n\n", error.debugDescription);
+        
+        const AVAudioFormat * audio_format      = [self configureAudioFormat];
+        const AVAudioChannelCount channel_count = audio_format.channelCount;
+        const AVAudioFrameCount frame_count     = audio_format.sampleRate * channel_count;
+        
+        [_playerNodes enumerateObjectsUsingBlock:^(id(^retained_object)(void), BOOL * _Nonnull stop) {
+            AVAudioPlayerNode * player_node = (AVAudioPlayerNode *)retained_object();
+            printf("\n%s\n", [[player_node description] UTF8String]);
+            ((*stop = [player_node isPlaying])) ?: ^{ [player_node prepareWithFrameCount:frame_count]; [player_node play]; }();
+        }];
+        
+        static unsigned int buffer_bit = 1;
+        [[ClicklessTones sharedClicklessTones] createAudioBufferWithFormat:audio_format completionBlock:^(AVAudioPCMBuffer * _Nonnull buffer1, AVAudioPCMBuffer * _Nonnull buffer2, PlayToneCompletionBlock playToneCompletionBlock) {
+            [_playerNodes enumerateObjectsUsingBlock:^(id(^retained_object)(void), BOOL * _Nonnull stop) {
+                AVAudioPlayerNode * player_node = (AVAudioPlayerNode *)retained_object();
+                (!player_node) ?: [player_node scheduleBuffer:(buffer_bit) ? buffer1 : buffer2 atTime:nil options:AVAudioPlayerNodeBufferInterruptsAtLoop completionCallbackType:AVAudioPlayerNodeCompletionDataPlayedBack completionHandler:^(AVAudioPlayerNodeCompletionCallbackType callbackType) {
+                    buffer_bit ^= 1;
+                    (buffer_bit) ?: playToneCompletionBlock();
                 }];
             }];
-            
-        } else {
-            [self->_audioEngine pause];
-            audioEngineRunningStatus()([self.audioEngine isRunning]);
-        }
-}
-
-
-double Normalize(double a, double b)
-{
-    return (double)(a / b);
-}
-
-#define max_frequency      1500.0
-#define min_frequency       100.0
-#define max_trill_interval    4.0
-#define min_trill_interval    2.0
-#define duration_interval     5.0
-#define duration_maximum      2.0
-
-
-// Elements of an effective tone:
-// High-pitched
-// Modulating amplitude
-// Alternating channel output
-// Loud
-// Non-natural (no spatialization)
-//
-// Elements of an effective score:
-// Random frequencies
-// Random duration
-// Random tonality
-
-// To-Do: Multiply the frequency by a random number between 1.01 and 1.1)
-
-typedef NS_ENUM(NSUInteger, TonalHarmony) {
-    TonalHarmonyConsonance,
-    TonalHarmonyDissonance,
-    TonalHarmonyRandom
-};
-
-typedef NS_ENUM(NSUInteger, TonalInterval) {
-    TonalIntervalUnison,
-    TonalIntervalOctave,
-    TonalIntervalMajorSixth,
-    TonalIntervalPerfectFifth,
-    TonalIntervalPerfectFourth,
-    TonalIntervalMajorThird,
-    TonalIntervalMinorThird,
-    TonalIntervalRandom
-};
-
-typedef NS_ENUM(NSUInteger, TonalEnvelope) {
-    TonalEnvelopeAverageSustain,
-    TonalEnvelopeLongSustain,
-    TonalEnvelopeShortSustain
-};
-
-double Tonality(double frequency, TonalInterval interval, TonalHarmony harmony)
-{
-    double new_frequency = frequency;
-    switch (harmony) {
-        case TonalHarmonyDissonance:
-            new_frequency *= (1.1 + drand48());
-            break;
-            
-        case TonalHarmonyConsonance:
-            new_frequency = ToneGenerator.Interval(frequency, interval);
-            break;
-            
-        case TonalHarmonyRandom:
-            new_frequency = Tonality(frequency, interval, (TonalHarmony)arc4random_uniform(2));
-            break;
-            
-        default:
-            break;
-    }
-    
-    return new_frequency;
-}
-
-double Envelope(double x, TonalEnvelope envelope)
-{
-    double x_envelope = 1.0;
-    switch (envelope) {
-        case TonalEnvelopeAverageSustain:
-            x_envelope = sinf(x * M_PI) * (sinf((2 * x * M_PI) / 2));
-            break;
-            
-        case TonalEnvelopeLongSustain:
-            x_envelope = sinf(x * M_PI) * -sinf(
-                                                ((Envelope(x, TonalEnvelopeAverageSustain) - (2.0 * Envelope(x, TonalEnvelopeAverageSustain)))) / 2.0)
-            * (M_PI / 2.0) * 2.0;
-            break;
-            
-        case TonalEnvelopeShortSustain:
-            x_envelope = sinf(x * M_PI) * -sinf(
-                                                ((Envelope(x, TonalEnvelopeAverageSustain) - (-2.0 * Envelope(x, TonalEnvelopeAverageSustain)))) / 2.0)
-            * (M_PI / 2.0) * 2.0;
-            break;
-            
-        default:
-            break;
-    }
-    
-    return x_envelope;
-}
-
-typedef NS_ENUM(NSUInteger, Trill) {
-    TonalTrillUnsigned,
-    TonalTrillInverse
-};
-
-+ (double(^)(double, double))Frequency
-{
-    return ^double(double time, double frequency)
-    {
-        return pow(sinf(M_PI * time * frequency), 2.0);
-    };
-}
-
-+ (double(^)(double))TrillInterval
-{
-    return ^double(double frequency)
-    {
-        return ((frequency / (max_frequency - min_frequency) * (max_trill_interval - min_trill_interval)) + min_trill_interval);
-    };
-}
-
-+ (double(^)(double, double))Trill
-{
-    return ^double(double time, double trill)
-    {
-        return pow(2.0 * pow(sinf(M_PI * time * trill), 2.0) * 0.5, 4.0);
-    };
-}
-
-+ (double(^)(double, double))TrillInverse
-{
-    return ^double(double time, double trill)
-    {
-        return pow(-(2.0 * pow(sinf(M_PI * time * trill), 2.0) * 0.5) + 1.0, 4.0);
-    };
-}
-
-+ (double(^)(double))Amplitude
-{
-    return ^double(double time)
-    {
-        return pow(sinf(time * M_PI), 3.0) * 0.5;
-    };
-}
-
-+ (double(^)(double, TonalInterval))Interval
-{
-    return ^double(double frequency, TonalInterval interval)
-    {
-        double new_frequency = frequency;
-        switch (interval)
-        {
-            case TonalIntervalUnison:
-                new_frequency *= 1.0;
-                break;
-                
-            case TonalIntervalOctave:
-                new_frequency *= 2.0;
-                break;
-                
-            case TonalIntervalMajorSixth:
-                new_frequency *= 5.0/3.0;
-                break;
-                
-            case TonalIntervalPerfectFifth:
-                new_frequency *= 4.0/3.0;
-                break;
-                
-            case TonalIntervalMajorThird:
-                new_frequency *= 5.0/4.0;
-                break;
-                
-            case TonalIntervalMinorThird:
-                new_frequency *= 6.0/5.0;
-                break;
-                
-            case TonalIntervalRandom:
-                new_frequency = ToneGenerator.Interval(frequency, (TonalInterval)arc4random_uniform(7));
-                
-            default:
-                break;
-        }
+        }];
         
-        return new_frequency;
-    };
-};
-
-AVAudioPCMBuffer * (^audioBufferFromFrequencies)(Frequencies *, AVAudioFormat *) = ^AVAudioPCMBuffer *(Frequencies *frequencies, AVAudioFormat *audioFormat)
-{
-    AVAudioFrameCount frameCount = audioFormat.sampleRate;
-    AVAudioPCMBuffer *pcmBuffer = [[AVAudioPCMBuffer alloc] initWithPCMFormat:audioFormat frameCapacity:frameCount];
-    pcmBuffer.frameLength = frameCount;
-    float *left_channel  = pcmBuffer.floatChannelData[0];
-    float *right_channel = (audioFormat.channelCount == 2) ? pcmBuffer.floatChannelData[1] : nil;
-    
-    
-    double harmonized_frequency = Tonality(frequencies.frequency1.doubleValue, TonalIntervalRandom, TonalHarmonyRandom);
-    double trill_interval       = ToneGenerator.TrillInterval(frequencies.frequency1.doubleValue);
-    for (int index = 0; index < frameCount; index++)
-    {
-        double normalized_index = Normalize(index, frameCount);
-        double trill            = ToneGenerator.Trill(normalized_index, trill_interval);
-        double trill_inverse    = ToneGenerator.TrillInverse(normalized_index, trill_interval);
-        double amplitude        = ToneGenerator.Amplitude(normalized_index);
-        
-//    int amplitude_frequency = arc4random_uniform(8) + 4;
-        if (left_channel) left_channel[index] = ToneGenerator.Frequency(normalized_index, frequencies.frequency1.doubleValue) * amplitude * trill;
-        if (right_channel) right_channel[index] = ToneGenerator.Frequency(normalized_index, harmonized_frequency) * amplitude * trill_inverse;
-        
-//        if (left_channel)  left_channel[index]  = (NormalizedSineEaseInOut(normalized_index, frequencies.frequency1.doubleValue) * NormalizedSineEaseInOut(normalized_index, amplitude_frequency));
-//        if (right_channel) right_channel[index] = (NormalizedSineEaseInOut(normalized_index, frequencies.frequency2.doubleValue) * NormalizedSineEaseInOut(normalized_index, amplitude_frequency)); // fade((leading_fade == FadeOut) ? FadeIn : leading_fade, normalized_index, (SineEaseInOutFrequency(normalized_index, frequencyRight) * NormalizedSineEaseInOutAmplitude((1.0 - normalized_index), 1)));
+    } else {
+        [self->_audioEngine pause];
+        audioEngineRunningStatus()([self.audioEngine isRunning]);
     }
-    
-    return pcmBuffer;
-};
-
-typedef void (^DataPlayedBackCompletionBlock)(void);
-typedef void (^DataRenderedCompletionBlock)(NSArray<Frequencies *> * frequencyPair, DataPlayedBackCompletionBlock dataPlayedBackCompletionBlock);
+}
 
 @end
+
+/*
+ - (AVAudioPCMBuffer *)createAudioBufferWithLoopableSineWaveFrequency:(NSUInteger)frequency
+ {
+ AVAudioFormat *mixerFormat = [_mixerNode outputFormatForBus:0];
+ NSUInteger randomNum = [self generateRandomNumberBetweenMin:1 Max:4];
+ double frameLength = mixerFormat.sampleRate / randomNum;
+ AVAudioPCMBuffer *pcmBuffer = [[AVAudioPCMBuffer alloc] initWithPCMFormat:mixerFormat frameCapacity:frameLength];
+ pcmBuffer.frameLength = frameLength;
+
+     float *leftChannel = pcmBuffer.floatChannelData[0];
+     float *rightChannel = mixerFormat.channelCount == 2 ? pcmBuffer.floatChannelData[1] : nil;
+
+     NSUInteger r = arc4random_uniform(2);
+     double amplitude_step  = (1.0 / frameLength > 0.000100) ? (((double)arc4random() / 0x100000000) * (0.000100 - 0.000021) + 0.000021) : 1.0 / frameLength;
+     double amplitude_value = 0.0;
+     for (int i_sample = 0; i_sample < pcmBuffer.frameCapacity; i_sample++)
+     {
+         amplitude_value += amplitude_step;
+         double amplitude = pow(((r == 1) ? ((amplitude_value < 1.0) ? (amplitude_value) : 1.0) : ((1.0 - amplitude_value > 0.0) ? 1.0 - (amplitude_value) : 0.0)), ((r == 1) ? randomNum : 1.0/randomNum));
+         amplitude = ((amplitude < 0.000001) ? 0.000001 : amplitude);
+         double value = sinf((frequency*i_sample*2*M_PI) / mixerFormat.sampleRate);
+         if (leftChannel)  leftChannel[i_sample]  = value * amplitude;
+         if (rightChannel) rightChannel[i_sample] = value * (1.0 - amplitude);
+     }
+
+     return pcmBuffer;
+ }
+*/
+
+//double Envelope(double x, TonalEnvelope envelope)
+//{
+//    double x_envelope = 1.0;
+//    switch (envelope) {
+//        case TonalEnvelopeAverageSustain:
+//            x_envelope = sinf(x * M_PI) * (sinf((2 * x * M_PI) / 2));
+//            break;
+//
+//        case TonalEnvelopeLongSustain:
+//            x_envelope = sinf(x * M_PI) * -sinf(
+//                                                ((Envelope(x, TonalEnvelopeAverageSustain) - (2.0 * Envelope(x, TonalEnvelopeAverageSustain)))) / 2.0)
+//            * (M_PI / 2.0) * 2.0;
+//            break;
+//
+//        case TonalEnvelopeShortSustain:
+//            x_envelope = sinf(x * M_PI) * -sinf(
+//                                                ((Envelope(x, TonalEnvelopeAverageSustain) - (-2.0 * Envelope(x, TonalEnvelopeAverageSustain)))) / 2.0)
+//            * (M_PI / 2.0) * 2.0;
+//            break;
+//
+//        default:
+//            break;
+//    }
+//
+//    return x_envelope;
+//}
+//
+//typedef NS_ENUM(NSUInteger, Trill) {
+//    TonalTrillUnsigned,
+//    TonalTrillInverse
+//};
+//
+//+ (double(^)(double))TrillInterval
+//{
+//    return ^double(double frequency)
+//    {
+//        return ((frequency / (max_frequency - min_frequency) * (max_trill_interval - min_trill_interval)) + min_trill_interval);
+//    };
+//}
+//
+//+ (double(^)(double, double))Trill
+//{
+//    return ^double(double time, double trill)
+//    {
+//        return pow(2.0 * pow(sinf(M_PI * time * trill), 2.0) * 0.5, 4.0);
+//    };
+//}
+//
+//+ (double(^)(double, double))TrillInverse
+//{
+//    return ^double(double time, double trill)
+//    {
+//        return pow(-(2.0 * pow(sinf(M_PI * time * trill), 2.0) * 0.5) + 1.0, 4.0);
+//    };
+//}
+//
+//+ (double(^)(double))Amplitude
+//{
+//    return ^double(double time)
+//    {
+//        return pow(sinf(time * M_PI), 3.0) * 0.5;
+//    };
+//}
+//
+//
+//
+//AVAudioPCMBuffer * (^audioBufferFromFrequencies)(Frequencies *, AVAudioFormat *) = ^AVAudioPCMBuffer *(Frequencies *frequencies, AVAudioFormat *audioFormat)
+//{
+//    AVAudioFrameCount frameCount = audioFormat.sampleRate;
+//    AVAudioPCMBuffer *pcmBuffer = [[AVAudioPCMBuffer alloc] initWithPCMFormat:audioFormat frameCapacity:frameCount];
+//    pcmBuffer.frameLength = frameCount;
+//    float *left_channel  = pcmBuffer.floatChannelData[0];
+//    float *right_channel = (audioFormat.channelCount == 2) ? pcmBuffer.floatChannelData[1] : nil;
+//
+//
+//    double harmonized_frequency = Tonality(frequencies.frequency1.doubleValue, TonalIntervalRandom, TonalHarmonyRandom);
+//    double trill_interval       = ToneGenerator.TrillInterval(frequencies.frequency1.doubleValue);
+//    for (int index = 0; index < frameCount; index++)
+//    {
+//        double normalized_index = Normalize(index, frameCount);
+//        double trill            = ToneGenerator.Trill(normalized_index, trill_interval);
+//        double trill_inverse    = ToneGenerator.TrillInverse(normalized_index, trill_interval);
+//        double amplitude        = ToneGenerator.Amplitude(normalized_index);
+//
+////    int amplitude_frequency = arc4random_uniform(8) + 4;
+//        if (left_channel) left_channel[index] = ToneGenerator.Frequency(normalized_index, frequencies.frequency1.doubleValue) * amplitude * trill;
+//        if (right_channel) right_channel[index] = ToneGenerator.Frequency(normalized_index, harmonized_frequency) * amplitude * trill_inverse;
+//
+////        if (left_channel)  left_channel[index]  = (NormalizedSineEaseInOut(normalized_index, frequencies.frequency1.doubleValue) * NormalizedSineEaseInOut(normalized_index, amplitude_frequency));
+////        if (right_channel) right_channel[index] = (NormalizedSineEaseInOut(normalized_index, frequencies.frequency2.doubleValue) * NormalizedSineEaseInOut(normalized_index, amplitude_frequency)); // fade((leading_fade == FadeOut) ? FadeIn : leading_fade, normalized_index, (SineEaseInOutFrequency(normalized_index, frequencyRight) * NormalizedSineEaseInOutAmplitude((1.0 - normalized_index), 1)));
+//    }
+//
+//    return pcmBuffer;
+//};
+//
+//@end
+//
+////
+////typedef void (^DataPlayedBackCompletionBlock)(void);
+////typedef void (^DataRenderedCompletionBlock)(NSArray<Frequencies *> * frequencyPair, DataPlayedBackCompletionBlock dataPlayedBackCompletionBlock);
+////
+////@end
