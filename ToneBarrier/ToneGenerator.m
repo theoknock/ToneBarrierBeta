@@ -21,12 +21,11 @@
 
 @property (nonatomic, strong) AVAudioSession    * audioSession;
 @property (nonatomic, strong) AVAudioEngine     * audioEngine;
-@property (nonatomic, strong) NSSet * playerNodes;
-@property (nonatomic, strong) AVAudioPlayerNode * playerNode;
-@property (nonatomic, strong) AVAudioMixerNode  * submixerNode;
+@property (nonatomic, strong) NSSet             * playerNodes;
 @property (nonatomic, strong) AVAudioMixerNode  * mixerNode;
-@property (nonatomic, strong) AVAudioOutputNode * outputNode;
+@property (nonatomic, strong) AVAudioMixerNode  * mainNode;
 @property (nonatomic, strong) AVAudioUnitReverb * reverb;
+@property (nonatomic, strong) AVAudioFormat     * audioFormat;
 
 @end
 
@@ -46,16 +45,6 @@ static ToneGenerator *sharedGenerator = NULL;
     
     return sharedGenerator;
 }
-
-static AVAudioPlayerNode * (^player_node)(AVAudioEngine *, AVAudioMixerNode *) = ^ AVAudioPlayerNode * (AVAudioEngine * audio_engine, AVAudioMixerNode * sub_mixer) {
-    AVAudioPlayerNode * player = [[AVAudioPlayerNode alloc] init];
-    [audio_engine attachNode:player];
-    [audio_engine connect:player to:sub_mixer format:[audio_engine.outputNode outputFormatForBus:0]];
-    
-    return player;
-};
-
-//Block_copy((typeof(unsigned long(^*)(void)))CFBridgingRetain(integrand_block));
 
 typedef const id * _Nonnull stored_object;
 typedef stored_object (^storable_object)(void);
@@ -119,23 +108,22 @@ stored_object (^(^ _Nonnull store_object)(storable_object))(void) = ^ unstored_o
 //        return ^ (mapper map) {
 //            (integrand = ^ unsigned long (unsigned long index) {
 //                --index;
-////                *((id * const)obj_collection_t + index) =
+//                //                *((id * const)obj_collection_t + index) =
 //                map(index);
 //                return (unsigned long)(index ^ 0UL) && (unsigned long)(integrand)(index);
 //            })(iterations);
 //            return ^ (applier apply) {
 //                (integrand = ^ unsigned long (unsigned long index) {
 //                    --index;
-////                    const id * button_t = (const id * const)CFBridgingRetain((__bridge id)((__bridge const void * _Nonnull)(*((id * const)obj_collection_t + index))));
+//                    //                    const id * button_t = (const id * const)CFBridgingRetain((__bridge id)((__bridge const void * _Nonnull)(*((id * const)obj_collection_t + index))));
 //                    apply(obj_collection_t + index);
-////                    apply((const id _Nonnull * _Nonnull const)(*((id * const)obj_collection_t + index)));
+//                    //                    apply((const id _Nonnull * _Nonnull const)(*((id * const)obj_collection_t + index)));
 //                    return (unsigned long)(index ^ 0UL) && (unsigned long)(integrand)(index);
 //                })(iterations);
 //            };
 //        };
 //    }(&obj_collection);
 //};
-
 
 id (^retainable_object)(id(^)(void)) = ^ id (id(^object)(void)) {
     return ^{
@@ -150,17 +138,26 @@ id (^(^retain_object)(id(^)(void)))(void) = ^ (id(^retainable_object)(void)) {
     };
 };
 
-//static id (^(^map)(const unsigned long))(id(^)(void)) = ^ (const unsigned long object_count) {
-//    
-//    typedef typeof(id(^)(void)) retained_objects[object_count];
-//    typeof(retained_objects) retained_objects_ref[object_count];
-//    
-//    ^ (const id * _Nonnull retained_objects_t, const unsigned long index_count) {
-//        return ^ id (id(^object)(void)) {
-//            return object();
-//        };
-//    }((const id *)retained_objects_ref, object_count);
-//};
+typedef typeof(unsigned long (^)(unsigned long)) recursive_iterator;
+static void (^(^iterator)(const unsigned long))(id(^)(void)) = ^ (const unsigned long object_count) {
+    typeof(id(^)(void)) retained_objects_ref;
+    return ^ (id * retained_objects_t) {
+        return ^ (id(^object)(void)) {
+            
+            // --------
+            ^ (unsigned long index) {
+                return ^ unsigned long {
+                    printf("retained_object: %p\n", (*((id * const)retained_objects_t + object_count) = retain_object(retainable_object(object))));
+                    return index;
+                };
+            };
+            // --------
+            
+        };
+    }((id *)&retained_objects_ref);
+};
+
+
 
 - (instancetype)init
 {
@@ -169,34 +166,44 @@ id (^(^retain_object)(id(^)(void)))(void) = ^ (id(^retainable_object)(void)) {
     if (self)
     {
         _audioEngine = [[AVAudioEngine alloc] init];
-        _outputNode = [_audioEngine outputNode];
         
-        _submixerNode = [[AVAudioMixerNode alloc] init];
-        [_audioEngine attachNode:_submixerNode];
+        _mainNode = [self.audioEngine mainMixerNode];
         
+        AVAudioChannelCount channelCount = [_mainNode outputFormatForBus:0].channelCount;
+        const double sampleRate = [_mainNode outputFormatForBus:0].sampleRate;
+        _audioFormat = [[AVAudioFormat alloc] initStandardFormatWithSampleRate:sampleRate channels:channelCount];
+        
+        [_audioEngine prepare];
+        
+        _mixerNode = [[AVAudioMixerNode alloc] init];
         _reverb = [[AVAudioUnitReverb alloc] init];
-        [_reverb loadFactoryPreset:AVAudioUnitReverbPresetLargeHall];
-        [_reverb setWetDryMix:50];
+        [_reverb loadFactoryPreset:AVAudioUnitReverbPresetLargeChamber];
+        [_reverb setWetDryMix:50.0];
+        
         [_audioEngine attachNode:_reverb];
+        [_audioEngine attachNode:_mixerNode];
         
         id (^player_node_object)(void) = ^ id {
             AVAudioPlayerNode * player = [[AVAudioPlayerNode alloc] init];
+            [player setRenderingAlgorithm:AVAudio3DMixingRenderingAlgorithmAuto];
+            [player setSourceMode:AVAudio3DMixingSourceModeAmbienceBed];
+            [player setPosition:AVAudioMake3DPoint(0.0, 0.0, 0.0)];
+            
             return player;
-        };
-
+        }; iterator(2)(player_node_object);
+        
         _playerNodes = [[NSSet alloc] initWithArray:@[retain_object(retainable_object(player_node_object)), retain_object(retainable_object(player_node_object))]];
         [_playerNodes enumerateObjectsUsingBlock:^(id(^retained_object)(void), BOOL * _Nonnull stop) {
             AVAudioPlayerNode * player_node = (AVAudioPlayerNode *)retained_object();
+
             [_audioEngine attachNode:player_node];
-            [_audioEngine connect:player_node to:_submixerNode format:[_outputNode outputFormatForBus:0]];
+            [_audioEngine connect:player_node to:_mixerNode format:_audioFormat];
         }];
         
-        [_audioEngine connect:_submixerNode to:_reverb format:[_outputNode outputFormatForBus:0]];
         
-        _mixerNode = _audioEngine.mainMixerNode;
-        [_mixerNode setReverbBlend:1.0];
-        
-        [_audioEngine connect:_reverb to:_mixerNode format:[_outputNode outputFormatForBus:0]];
+
+        [_audioEngine connect:_mixerNode to:_reverb     format:_audioFormat];
+        [_audioEngine connect:_reverb    to:_mainNode   format:_audioFormat];
     }
     
     return self;
@@ -207,7 +214,8 @@ id (^(^retain_object)(id(^)(void)))(void) = ^ (id(^retainable_object)(void)) {
     
     _audioSession = [AVAudioSession sharedInstance];
     [_audioSession setSupportsMultichannelContent:TRUE error:&error];
-    [_audioSession setCategory:AVAudioSessionCategoryPlayback mode:AVAudioSessionModeDefault routeSharingPolicy:AVAudioSessionRouteSharingPolicyDefault options:AVAudioSessionCategoryOptionAllowAirPlay error:&error];
+    [_audioSession setCategory:AVAudioSessionCategoryPlayback mode:AVAudioSessionModeDefault routeSharingPolicy:AVAudioSessionRouteSharingPolicyLongFormAudio
+                       options:AVAudioSessionCategoryOptionAllowAirPlay error:&error];
     [_audioSession setPreferredOutputNumberOfChannels:2 error:&error];
     [_audioSession setPreferredInputNumberOfChannels:2 error:&error];
     [_audioSession setActive:YES error:&error];
@@ -220,40 +228,27 @@ id (^(^retain_object)(id(^)(void)))(void) = ^ (id(^retainable_object)(void)) {
     return ( (arc4random() % (max-min+1)) + min );
 }
 
-- (AVAudioFormat *)configureAudioFormat
-{
-//    AVAudioFormat * audio_format = nil;
-//    AVAudioChannelCount channel_count = [_outputNode outputFormatForBus:0].channelCount;
-//    AVAudioChannelLayout * channel_layout = [[AVAudioChannelLayout alloc] initWithLayoutTag:kAudioChannelLayoutTag_Stereo]; // or ...channels:channel_count];
-    AVAudioFormat * audio_format = [[AVAudioFormat alloc] initStandardFormatWithSampleRate:[_outputNode outputFormatForBus:0].sampleRate channelLayout:[_outputNode outputFormatForBus:0].channelLayout];
-//
-    
-    return audio_format;
-}
-
 - (void)togglePlayWithAudioEngineRunningStatusCallback:(void (^(^)(void))(BOOL))audioEngineRunningStatus
 {
     if (![self->_audioEngine isRunning])
     {
         __autoreleasing NSError *error = nil;
-        audioEngineRunningStatus()([self.audioEngine startAndReturnError:&error] && [self.audioEngine isRunning]);
+        audioEngineRunningStatus()([_audioEngine startAndReturnError:&error] && [_audioEngine isRunning]);
         (!error) ? [self configureAudioSession] : NSLog(@"\nstartAndReturnError error:\n\n%@\n\n", error.debugDescription);
         
-        const AVAudioFormat * audio_format      = [self configureAudioFormat];
-        const AVAudioChannelCount channel_count = audio_format.channelCount;
-        const AVAudioFrameCount frame_count     = audio_format.sampleRate * channel_count;
+        const AVAudioChannelCount channel_count = _audioFormat.channelCount;
+        const AVAudioFrameCount frame_count     = _audioFormat.sampleRate * channel_count;
         
         [_playerNodes enumerateObjectsUsingBlock:^(id(^retained_object)(void), BOOL * _Nonnull stop) {
             AVAudioPlayerNode * player_node = (AVAudioPlayerNode *)retained_object();
-            printf("\n%s\n", [[player_node description] UTF8String]);
             ((*stop = [player_node isPlaying])) ?: ^{ [player_node prepareWithFrameCount:frame_count]; [player_node play]; }();
         }];
         
         static unsigned int buffer_bit = 1;
-        [[ClicklessTones sharedClicklessTones] createAudioBufferWithFormat:audio_format completionBlock:^(AVAudioPCMBuffer * _Nonnull buffer1, AVAudioPCMBuffer * _Nonnull buffer2, PlayToneCompletionBlock playToneCompletionBlock) {
+        [[ClicklessTones sharedClicklessTones] createAudioBufferWithFormat:_audioFormat completionBlock:^(AVAudioPCMBuffer * _Nonnull buffer1, AVAudioPCMBuffer * _Nonnull buffer2, PlayToneCompletionBlock playToneCompletionBlock) {
             [_playerNodes enumerateObjectsUsingBlock:^(id(^retained_object)(void), BOOL * _Nonnull stop) {
                 AVAudioPlayerNode * player_node = (AVAudioPlayerNode *)retained_object();
-                (!player_node) ?: [player_node scheduleBuffer:(buffer_bit) ? buffer1 : buffer2 atTime:nil options:AVAudioPlayerNodeBufferInterruptsAtLoop completionCallbackType:AVAudioPlayerNodeCompletionDataPlayedBack completionHandler:^(AVAudioPlayerNodeCompletionCallbackType callbackType) {
+                (!player_node) ?: [player_node scheduleBuffer:(buffer_bit) ? buffer1 : buffer2 completionCallbackType:AVAudioPlayerNodeCompletionDataPlayedBack completionHandler:^(AVAudioPlayerNodeCompletionCallbackType callbackType) {
                     buffer_bit ^= 1;
                     (buffer_bit) ?: playToneCompletionBlock();
                 }];

@@ -30,7 +30,7 @@
     [self.playButton setImage:[UIImage systemImageNamed:@"play"] forState:UIControlStateNormal];
     [self.playButton setImage:[UIImage systemImageNamed:@"pause"] forState:UIControlStateDisabled];
     
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleAudioRouteChange) name:AVAudioSessionRouteChangeNotification object:nil];
+//    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleAudioRouteChange) name:AVAudioSessionRouteChangeNotification object:nil];
     
     NSMutableDictionary<NSString *, id> * nowPlayingInfo = [[NSMutableDictionary alloc] initWithCapacity:2];
     [nowPlayingInfo setObject:@"ToneBarrier" forKey:MPMediaItemPropertyTitle];
@@ -47,24 +47,18 @@
     [nowPlayingInfo setObject:(MPMediaItemArtwork *)artwork forKey:MPMediaItemPropertyArtwork];
     
     [_nowPlayingInfoCenter = [MPNowPlayingInfoCenter defaultCenter] setNowPlayingInfo:(NSDictionary<NSString *,id> * _Nullable)nowPlayingInfo];
-    [_nowPlayingInfoCenter setPlaybackState:MPNowPlayingPlaybackStatePaused];
     
-    [[_remoteCommandCenter = [MPRemoteCommandCenter sharedCommandCenter] playCommand] addTargetWithHandler:^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent * _Nonnull event) {
-        [self playButtonAction:_playButton];
+    MPRemoteCommandHandlerStatus (^remote_command_handler)(MPRemoteCommandEvent * _Nonnull) = ^ MPRemoteCommandHandlerStatus (MPRemoteCommandEvent * _Nonnull event) {
+        [self playButtonAction:self->_playButton];
         return MPRemoteCommandHandlerStatusSuccess;
-    }];
-    [[_remoteCommandCenter stopCommand] addTargetWithHandler:^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent * _Nonnull event) {
-        [self playButtonAction:_playButton];
-        return MPRemoteCommandHandlerStatusSuccess;
-    }];
-    [[_remoteCommandCenter pauseCommand] addTargetWithHandler:^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent * _Nonnull event) {
-        [self playButtonAction:_playButton];
-        return MPRemoteCommandHandlerStatusSuccess;
-    }];
-    [[_remoteCommandCenter togglePlayPauseCommand] addTargetWithHandler:^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent * _Nonnull event) {
-        [self playButtonAction:_playButton];
-        return MPRemoteCommandHandlerStatusSuccess;
-    }];
+    };
+    
+    [[_remoteCommandCenter = [MPRemoteCommandCenter sharedCommandCenter] playCommand] addTargetWithHandler:remote_command_handler];
+    [[_remoteCommandCenter stopCommand] addTargetWithHandler:remote_command_handler];
+    [[_remoteCommandCenter pauseCommand] addTargetWithHandler:remote_command_handler];
+    [[_remoteCommandCenter togglePlayPauseCommand] addTargetWithHandler:remote_command_handler];
+    
+    [[UIApplication sharedApplication]  beginReceivingRemoteControlEvents];
 }
 
 - (void)viewWillAppear:(BOOL)animated

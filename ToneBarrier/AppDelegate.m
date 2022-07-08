@@ -1,10 +1,3 @@
-//
-//  AppDelegate.m
-//  ToneBarrier
-//
-//  Created by Xcode Developer on 6/15/22.
-//
-
 #import "AppDelegate.h"
 #import <BackgroundTasks/BackgroundTasks.h>
 #import "ToneGenerator.h"
@@ -13,6 +6,9 @@
 {
     dispatch_source_t timer;
 }
+
+@property (strong, nonatomic) MPNowPlayingInfoCenter * nowPlayingInfoCenter;
+@property (strong, nonatomic) MPRemoteCommandCenter * remoteCommandCenter;
 
 @end
 
@@ -29,6 +25,8 @@
         });
         dispatch_resume(self->timer);
     }];
+    
+    [self scheduleAppRefresh];
     
     return YES;
 }
@@ -70,29 +68,14 @@
     // Sent when the application is about to move from active to inactive state. This can occur for certain types of temporary interruptions (such as an incoming phone call or SMS message) or when the user quits the application and it begins the transition to the background state.
     // Use this method to pause ongoing tasks, disable timers, and invalidate graphics rendering callbacks. Games should use this method to pause the game.
     NSLog(@"%s", __PRETTY_FUNCTION__);
-//    [self scheduleAppRefresh];
-//    [ToneGenerator.sharedGenerator stop];
+    //    [self scheduleAppRefresh];
+    //    [ToneGenerator.sharedGenerator stop];
 }
 
 - (void)applicationDidEnterBackground:(UIApplication *)application {
     // Use this method to release shared resources, save user data, invalidate timers, and store enough application state information to restore your application to its current state in case it is terminated later.
     NSLog(@"%s", __PRETTY_FUNCTION__);
-//    [self scheduleAppRefresh];
-    [[UIApplication sharedApplication] beginReceivingRemoteControlEvents];
-    
-    MPRemoteCommandCenter *remoteCommandCenter = [MPRemoteCommandCenter sharedCommandCenter];
-    
-    [[remoteCommandCenter togglePlayPauseCommand] addTargetWithHandler:^MPRemoteCommandHandlerStatus(MPRemoteCommandEvent * _Nonnull event) {
-//        dispatch_async(dispatch_get_main_queue(), ^{
-            NSLog(@"Event %@", [[event command] description]);
-//            if (![ToneGenerator.sharedGenerator.playerOneNode isPlaying]) {
-//                    [ToneGenerator.sharedGenerator start];
-//            } else if ([ToneGenerator.sharedGenerator.playerOneNode isPlaying]) {
-//                [ToneGenerator.sharedGenerator stop];
-//            }
-//        });
-        return MPRemoteCommandHandlerStatusSuccess;
-    }];
+//    [self scheduleAppRefresh]
 }
 
 

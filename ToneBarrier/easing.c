@@ -15,7 +15,7 @@
 // Modeled after the line y = x
 double LinearInterpolation(double a, double b)
 {
-    return (double)(a / b);
+    return (double)((double)a / b);
 }
 
 // Linear easing

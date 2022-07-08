@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		B958ADA22877E45C00480467 /* GameKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B958ADA12877E45C00480467 /* GameKit.framework */; };
 		B96C25B12865F0EA00A75975 /* ClicklessTones.m in Sources */ = {isa = PBXBuildFile; fileRef = B96C25AF2865F0EA00A75975 /* ClicklessTones.m */; };
 		B96C25B42865F1A400A75975 /* easing.c in Sources */ = {isa = PBXBuildFile; fileRef = B96C25B22865F1A400A75975 /* easing.c */; };
 		B9869C5F28672FAC004C4E18 /* ToneGenerator.m in Sources */ = {isa = PBXBuildFile; fileRef = B9869C5D28672FAC004C4E18 /* ToneGenerator.m */; };
@@ -39,6 +40,7 @@
 
 /* Begin PBXFileReference section */
 		B9553671286E990A001E350B /* ToneBarrierScorePlayer-OLD.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "ToneBarrierScorePlayer-OLD.m"; sourceTree = "<group>"; };
+		B958ADA12877E45C00480467 /* GameKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GameKit.framework; path = System/Library/Frameworks/GameKit.framework; sourceTree = SDKROOT; };
 		B96C25AF2865F0EA00A75975 /* ClicklessTones.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ClicklessTones.m; sourceTree = "<group>"; wrapsLines = 0; };
 		B96C25B02865F0EA00A75975 /* ClicklessTones.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ClicklessTones.h; sourceTree = "<group>"; };
 		B96C25B22865F1A400A75975 /* easing.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = easing.c; sourceTree = "<group>"; };
@@ -75,12 +77,21 @@
 				B9869C6628673755004C4E18 /* MediaPlayer.framework in Frameworks */,
 				B9869C6728673755004C4E18 /* AudioToolbox.framework in Frameworks */,
 				B9869C7028674C33004C4E18 /* AVKit.framework in Frameworks */,
+				B958ADA22877E45C00480467 /* GameKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		B958ADA02877E45C00480467 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				B958ADA12877E45C00480467 /* GameKit.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		B9869C6328673755004C4E18 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
@@ -97,6 +108,7 @@
 			children = (
 				B99077DD285AD0AF004F494E /* ToneBarrier */,
 				B99077DC285AD0AF004F494E /* Products */,
+				B958ADA02877E45C00480467 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -374,6 +386,7 @@
 				INFOPLIST_KEY_UIRequiresFullScreen = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -408,6 +421,7 @@
 				INFOPLIST_KEY_UIRequiresFullScreen = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",

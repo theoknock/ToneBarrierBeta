@@ -82,69 +82,7 @@ static double (^tonal)(double root_frequency) = ^ double (double root_frequency)
     return harmonic_frequency;
 };
 
-static double (^Percentage)(double, double, double) = ^double(double min, double max, double value) {
-    double result = (value - min) / (max - min);
 
-    return result;
-};
-
-typedef double (^Scale)(double, double, double, double, double);
-Scale scale = ^double(double min_new, double max_new, double val_old, double min_old, double max_old) {
-    double val_new = min_new + ((((val_old - min_old) * (max_new - min_new))) / (max_old - min_old));
-    
-    return val_new;
-};
-
-typedef double (^Linearize)(double, double, double);
-Linearize linearize = ^double(double range_min, double range_max, double value)
-{
-    double result = (value * (range_max - range_min)) + range_min;
-
-    return result;
-};
-
-
-typedef double (^RandomSource)(double, double);
-static RandomSource random_source_drand48 = ^double(double lower_bound, double higher_bound) {
-    double random = drand48();
-    double result = (random * (higher_bound - lower_bound)) + lower_bound;
-    
-    return result;
-
-};
-
-typedef double (^RandomDistributor)(RandomSource random_source, double, double, double, double);
-RandomDistributor random_distributor_gaussian_mean_variance = ^double(RandomSource random_source, double lower_bound, double upper_bound, double mean, double variance) {
-    double result        = exp(-(pow((random_source(lower_bound, upper_bound) - mean), 2.0) / variance));
-    double scaled_result = scale(0.0, 1.0, result, lower_bound, upper_bound);
-
-    return scaled_result;
-};
-
-
-
-RandomDistributor random_distributor_gaussian_mean_standard_deviation = ^double(RandomSource random_source, double lower_bound, double upper_bound, double mean, double standard_deviation) {
-    double result        = sqrt(1 / (2 * M_PI * standard_deviation)) * exp(-(1 / (2 * standard_deviation)) * (random_source(lower_bound, upper_bound) - mean) * 2);
-    double scaled_result = scale(0.0, 1.0, result, lower_bound, upper_bound);
-
-    return scaled_result;
-};
-
-typedef double (^FrequencySampler)(double, double);
-FrequencySampler sample_frequency = ^(double time, double frequency)
-{
-    double result = sinf(M_PI * 2.0 * time * frequency);
-    
-    return result;
-};
-
-typedef double (^AmplitudeSampler)(double, double);
-AmplitudeSampler sample_amplitude = ^(double time, double gain)
-{
-    double result = pow(sin(time * M_PI), gain);
-    
-    return result;
-};
 
 
 @interface ClicklessTones ()
@@ -189,13 +127,13 @@ static ClicklessTones * sharedClicklessTones = NULL;
 //    return arc4random() % (max - min + 1) + min;
 //};
 //
-//static double(^randomize)(double, double, double) = ^ double (double min, double max, double weight) {
-//    double random = drand48();
-//    double weighted_random = pow(random, weight);
-//    double frequency = (max - min) * (weighted_random - min) / (max - min) + min; // min + (weighted_random * (max - min));
-//
-//    return frequency;
-//};
+static double(^randomize)(double, double, double) = ^ double (double min, double max, double weight) {
+    double random = drand48();
+    double weighted_random = pow(random, weight);
+    double frequency = (max - min) * (weighted_random - min) / (max - min) + min; // min + (weighted_random * (max - min));
+
+    return frequency;
+};
 
 - (float)generateRandomNumberBetweenMin:(int)min Max:(int)max
 {
@@ -204,50 +142,100 @@ static ClicklessTones * sharedClicklessTones = NULL;
 
 - (void)createAudioBufferWithFormat:(AVAudioFormat *)audioFormat completionBlock:(CreateAudioBufferCompletionBlock)createAudioBufferCompletionBlock
 {
-    static AVAudioPCMBuffer * (^createAudioBuffer)(double, double);
-
-    createAudioBuffer = ^AVAudioPCMBuffer *(double frequencyLeft, double frequencyRight)
+    AVAudioPCMBuffer * (^createAudioBuffer)(double, double) = ^ AVAudioPCMBuffer * (double frequencyLeft, double frequencyRight)
     {
-        AVAudioFrameCount frameCount = audioFormat.sampleRate * (2.0 / [self generateRandomNumberBetweenMin:2 Max:4]);
-        AVAudioPCMBuffer *pcmBuffer = [[AVAudioPCMBuffer alloc] initWithPCMFormat:audioFormat frameCapacity:frameCount];
-        pcmBuffer.frameLength = frameCount;
+        AVAudioChannelCount channelCount = audioFormat.channelCount;
+        AVAudioFrameCount frameCount = audioFormat.sampleRate * channelCount;
+        AVAudioPCMBuffer *pcmBuffer = [[AVAudioPCMBuffer alloc] initWithPCMFormat:audioFormat frameCapacity:audioFormat.sampleRate];
+        pcmBuffer.frameLength = audioFormat.sampleRate;
         float *left_channel  = pcmBuffer.floatChannelData[0];
-        float *right_channel = (audioFormat.channelCount == 2) ? pcmBuffer.floatChannelData[1] : nil;
+        float *right_channel = pcmBuffer.floatChannelData[1];
 
-        for (int index = 0; index < frameCount; index++)
+        int amplitude_frequency = arc4random_uniform(4) + 2;
+        for (int index = 0; index < audioFormat.sampleRate; index++)
         {
             double normalized_index = LinearInterpolation(index, frameCount);
-            double left_signal_sample  = sample_signal(&normalized_index)(frequencyLeft,  2)();
-            double right_signal_sample = sample_signal(&normalized_index)(frequencyRight, 2)();
-            if (left_channel)  left_channel[index]  = left_signal_sample;  //NormalizedSineEaseInOut(normalized_index, frequencyLeft, 2);
-            if (right_channel) right_channel[index] = right_signal_sample; //NormalizedSineEaseInOut(normalized_index, frequencyLeft, 2);; //NormalizedSineEaseInOut(normalized_index, frequencyRight, 2);
+//            if (left_channel)  left_channel[index]  = NormalizedSineEaseInOut(normalized_index, frequencyLeft, amplitude_frequency);
+//            if (right_channel) right_channel[index] = NormalizedSineEaseInOut(normalized_index, frequencyRight, amplitude_frequency);
+            if (left_channel)  left_channel[index]  = NormalizedSineEaseInOut(normalized_index, frequencyLeft, amplitude_frequency) + (0.5 * (NormalizedSineEaseInOut(normalized_index, frequencyRight, amplitude_frequency) - NormalizedSineEaseInOut(normalized_index, frequencyLeft, amplitude_frequency)));
+            if (right_channel) right_channel[index] = NormalizedSineEaseInOut(normalized_index, frequencyRight, amplitude_frequency) + (0.5 * (NormalizedSineEaseInOut(normalized_index, frequencyLeft, amplitude_frequency) - NormalizedSineEaseInOut(normalized_index, frequencyRight, amplitude_frequency)));
         }
 
         return pcmBuffer;
     };
-
+    
     static void (^block)(void);
     block = ^void(void)
     {
-        // To combine both buffers, multiple the sum of the amplitude by the sum of the frequency/signal)
-
         dispatch_async(dispatch_get_main_queue(), ^{
-            createAudioBufferCompletionBlock(createAudioBuffer((((double)arc4random() / 0x100000000) * (high_frequency - low_frequency) + low_frequency), (((double)arc4random() / 0x100000000) * (high_frequency - low_frequency) + low_frequency)),
-                                             createAudioBuffer((((double)arc4random() / 0x100000000) * (high_frequency - low_frequency) + low_frequency), (((double)arc4random() / 0x100000000) * (high_frequency - low_frequency) + low_frequency)), ^{
-                //            NSLog(@"alternate_channel_flag == %ld", (long)self->alternate_channel_flag);
-                //            self->alternate_channel_flag = (self->alternate_channel_flag == 1) ? 0 : 1; // replace with bitwise XOR to toggle between 0 and 1 (self->alternate_channel_flag should be an unsigned primitive)
-                //            self->duration_bifurcate = [self->_distributor_duration nextInt]; //(((double)arc4random() / 0x100000000) * (max_duration - min_duration) + min_duration);
-                // THIS IS WRONG (BELOW)
-                //            self->frequency[0] = (((double)arc4random() / 0x100000000) * (high_frequency - low_frequency) + low_frequency); //self->frequency[1];
-                //            self->frequency[1] = (((double)arc4random() / 0x100000000) * (high_frequency - low_frequency) + low_frequency);
+//            fade_bit ^= 1;
+//            createAudioBufferCompletionBlock(tone_audio_buffer(audioFormat), tone_audio_buffer(audioFormat),
+            createAudioBufferCompletionBlock(createAudioBuffer([self->_distributor nextInt], [self->_distributor nextInt]),
+                                             createAudioBuffer([self->_distributor nextInt], [self->_distributor nextInt]),
+            ^{
                 block();
             });
         });
     };
     block();
-
-
+    
+    
 }
+
+
+//- (void)createAudioBufferWithFormat:(AVAudioFormat *)audioFormat completionBlock:(CreateAudioBufferCompletionBlock)createAudioBufferCompletionBlock
+//{
+//    double (^generate_random)(void) = random_generator();
+//
+//    static AVAudioPCMBuffer * (^createAudioBuffer)(double, double);
+//    createAudioBuffer = ^AVAudioPCMBuffer *(double frequencyLeft, double frequencyRight)
+//    {
+//        AVAudioChannelCount channelCount = audioFormat.channelCount;
+//        AVAudioFrameCount frameCount = audioFormat.sampleRate * channelCount;
+//        AVAudioPCMBuffer *pcmBuffer = [[AVAudioPCMBuffer alloc] initWithPCMFormat:audioFormat frameCapacity:audioFormat.sampleRate];
+//        pcmBuffer.frameLength = audioFormat.sampleRate;
+//        float *left_channel  = pcmBuffer.floatChannelData[0];
+//        float *right_channel = pcmBuffer.floatChannelData[1];
+//
+//        static AVAudioFramePosition index;
+//
+//        double (^left_tone_split_time)(void)  = Block_release((typeof(double (^__strong)(void)))signal_time(&index, audioFormat.sampleRate));
+//        double (^right_tone_split_time)(void) = signal_time(&index, audioFormat.sampleRate);
+//
+//        double (^left_signal_sample)(void) =  sample_signal(left_tone_split_time)(signal_frequency(note()), signal_amplitude(2));
+//        double (^right_signal_sample)(void) = sample_signal(right_tone_split_time)(signal_frequency(note()), signal_amplitude(2));
+//
+//        for (index = 0; index < audioFormat.sampleRate; index++)
+//        {
+//            double left = left_signal_sample();
+//            double right = right_signal_sample();
+//            if (left_channel)  left_channel[index]  = left; //NormalizedSineEaseInOut(time(), frequencyLeft, 2);
+////            if (right_channel) right_channel[index] = right; //NormalizedSineEaseInOut(time(), frequencyRight, 2);
+//        }
+//
+//        return pcmBuffer;
+//    };
+//
+//    static void (^block)(void);
+//    block = ^void(void)
+//    {
+//        // To combine both buffers, multiple the sum of the amplitude by the sum of the frequency/signal)
+//
+//        dispatch_async(dispatch_get_main_queue(), ^{
+//            createAudioBufferCompletionBlock(createAudioBuffer((((double)arc4random() / 0x100000000) * (high_frequency - low_frequency) + low_frequency), (((double)arc4random() / 0x100000000) * (high_frequency - low_frequency) + low_frequency)),
+//                                             createAudioBuffer((((double)arc4random() / 0x100000000) * (high_frequency - low_frequency) + low_frequency), (((double)arc4random() / 0x100000000) * (high_frequency - low_frequency) + low_frequency)), ^{
+//                //            NSLog(@"alternate_channel_flag == %ld", (long)self->alternate_channel_flag);
+//                //            self->alternate_channel_flag = (self->alternate_channel_flag == 1) ? 0 : 1; // replace with bitwise XOR to toggle between 0 and 1 (self->alternate_channel_flag should be an unsigned primitive)
+//                //            self->duration_bifurcate = [self->_distributor_duration nextInt]; //(((double)arc4random() / 0x100000000) * (max_duration - min_duration) + min_duration);
+//                // THIS IS WRONG (BELOW)
+//                //            self->frequency[0] = (((double)arc4random() / 0x100000000) * (high_frequency - low_frequency) + low_frequency); //self->frequency[1];
+//                //            self->frequency[1] = (((double)arc4random() / 0x100000000) * (high_frequency - low_frequency) + low_frequency);
+//                block();
+//            });
+//        });
+//    };
+//    block();
+//}
 
 
 //double signal_frequency = ^ double (double fundamental_frequency, double frequency_ratio) {
@@ -262,7 +250,7 @@ static ClicklessTones * sharedClicklessTones = NULL;
 //} (random(), -8, 24))
 //   : chord_frequency_ratios->root,
 //   ratio[1][chord_frequency_ratios->indices.ratio]);
-
+//
 //- (void)createAudioBufferWithFormat:(AVAudioFormat *)audioFormat completionBlock:(CreateAudioBufferCompletionBlock)createAudioBufferCompletionBlock
 //{
 //    AVAudioPCMBuffer * (^createAudioBuffer)(double, double, double, double) = ^ AVAudioPCMBuffer * (double tone_frequency_left_a, double tone_frequency_left_b, double tone_frequency_right_a, double tone_frequency_right_b) {
@@ -281,23 +269,23 @@ static ClicklessTones * sharedClicklessTones = NULL;
 //        int amplitude_right_b = (arc4random_uniform(12)) + 6;
 //        
 //        AVAudioFramePosition index = 0;
-//        double (^normalized_time)(void) = signal_time(&index, frame_count);
+//        
 //        double normalized_index = 0;
-//        double root_frequency = (((double)arc4random() / 0x100000000) * (high_frequency - low_frequency) + low_frequency);
-//        double (^signal_sample[2])(void);
-//        sample[0] = (sample_signal(&normalized_index))(root_frequency, (arc4random_uniform(12)) + 6);
-//        sample[1] = (sample_signal(&normalized_index))(tonal(root_frequency), (arc4random_uniform(12)) + 6);
+////        double root_frequency = (((double)arc4random() / 0x100000000) * (high_frequency - low_frequency) + low_frequency);
+////        double (^signal_sample[2])(void);
+////        sample[0] = (sample_signal(&normalized_index))(root_frequency, (arc4random_uniform(12)) + 6);
+////        sample[1] = (sample_signal(&normalized_index))(tonal(root_frequency), (arc4random_uniform(12)) + 6);
 //        
 //        for (index = 0; index < frame_count; index++)
 //        {
-//            normalized_index = normalized_time();
+//            normalized_index = LinearInterpolation(&index, frame_count);
 //            
-//            //            if (left_channel)  left_channel[index]  = tonal(signal); //+ (0.5 * (NormalizedSineEaseInOut(normalized_index, tonal(tone_frequency_left_1), amplitude) - NormalizedSineEaseInOut(normalized_index, tone_frequency_left_1, amplitude)));
+//                        if (left_channel)  left_channel[index]  = tonal(signal); //+ (0.5 * (NormalizedSineEaseInOut(normalized_index, tonal(tone_frequency_left_1), amplitude) - NormalizedSineEaseInOut(normalized_index, tone_frequency_left_1, amplitude)));
 //            
-//            //            if (left_channel)  left_channel[index]  = NormalizedSineEaseInOut(normalized_index, tone_frequency_left_a, amplitude_left_a) + (((index > split_frame_position_left) ? 1.0 : 0.0) * (NormalizedSineEaseInOut(normalized_index, tone_frequency_left_b, amplitude_left_b) - NormalizedSineEaseInOut(normalized_index, tone_frequency_left_a, amplitude_left_a)));
-//            //            if (right_channel) right_channel[index] = NormalizedSineEaseInOut(normalized_index, tone_frequency_right_a, amplitude_right_a) + (((index > split_frame_position_right) ? 1.0 : 0.0) * (NormalizedSineEaseInOut(normalized_index, tone_frequency_right_b, amplitude_right_b) - NormalizedSineEaseInOut(normalized_index, tone_frequency_right_a, amplitude_right_a)));
-//            if (left_channel)  left_channel[index]  = left_signal[0]; //signal_sample(normalized_index, tone_frequency_left_a, amplitude_left_a) + (((index > split_frame_position_left) ? 1.0 : 0.0) * (signal_sample(normalized_index, tone_frequency_left_b, amplitude_left_b) - signal_sample(normalized_index, tone_frequency_left_a, amplitude_left_a)));
-//            if (right_channel) right_channel[index] = right_signal[0]; //signal_sample(normalized_index, tone_frequency_right_a, amplitude_right_a) + (((index > split_frame_position_right) ? 1.0 : 0.0) * (signal_sample(normalized_index, tone_frequency_right_b, amplitude_right_b) - signal_sample(normalized_index, tone_frequency_right_a, amplitude_right_a)));
+////            if (left_channel)  left_channel[index]  = NormalizedSineEaseInOut(normalized_index, tone_frequency_left_a, amplitude_left_a) + (((index > split_frame_position_left) ? 1.0 : 0.0) * (NormalizedSineEaseInOut(normalized_index, tone_frequency_left_b, amplitude_left_b) - NormalizedSineEaseInOut(normalized_index, tone_frequency_left_a, amplitude_left_a)));
+////            if (right_channel) right_channel[index] = NormalizedSineEaseInOut(normalized_index, tone_frequency_right_a, amplitude_right_a) + (((index > split_frame_position_right) ? 1.0 : 0.0) * (NormalizedSineEaseInOut(normalized_index, tone_frequency_right_b, amplitude_right_b) - NormalizedSineEaseInOut(normalized_index, tone_frequency_right_a, amplitude_right_a)));
+////            if (left_channel)  left_channel[index]  = left_signal[0]; //signal_sample(normalized_index, tone_frequency_left_a, amplitude_left_a) + (((index > split_frame_position_left) ? 1.0 : 0.0) * (signal_sample(normalized_index, tone_frequency_left_b, amplitude_left_b) - signal_sample(normalized_index, tone_frequency_left_a, amplitude_left_a)));
+////            if (right_channel) right_channel[index] = right_signal[0]; //signal_sample(normalized_index, tone_frequency_right_a, amplitude_right_a) + (((index > split_frame_position_right) ? 1.0 : 0.0) * (signal_sample(normalized_index, tone_frequency_right_b, amplitude_right_b) - signal_sample(normalized_index, tone_frequency_right_a, amplitude_right_a)));
 //        }
 //        
 //        return pcmBuffer;
@@ -610,7 +598,6 @@ const double (^phase_validator)(double) = ^ double (double phase) {
 //    return audio_pcm_buffer;
 //};
 
-/*
  
  Updated AVAudioPCMBuffer renderer
  
