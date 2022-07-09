@@ -44,22 +44,42 @@
                                 <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                 <color key="tintColor" systemColor="systemBlueColor"/>
                             </view>
+                            <button opaque="NO" contentMode="scaleAspectFit" enabled="NO" contentHorizontalAlignment="center" contentVerticalAlignment="center" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="QJu-xe-pfH" userLabel="Play File Button">
+                                <rect key="frame" x="161" y="44" width="68" height="42.666666666666657"/>
+                                <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                <color key="tintColor" systemColor="linkColor"/>
+                                <state key="normal" title="Button"/>
+                                <buttonConfiguration key="configuration" style="plain" image="play.rectangle.on.rectangle" catalog="system">
+                                    <backgroundConfiguration key="background">
+                                        <color key="backgroundColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                        <color key="strokeColor" white="0.0" alpha="0.0" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                                    </backgroundConfiguration>
+                                    <preferredSymbolConfiguration key="preferredSymbolConfigurationForImage" configurationType="pointSize" pointSize="24" weight="ultraLight"/>
+                                    <color key="baseForegroundColor" systemColor="linkColor"/>
+                                </buttonConfiguration>
+                                <connections>
+                                    <action selector="playFileButtonAction:" destination="9it-0F-OTs" eventType="touchUpInside" id="lJ9-HY-QX1"/>
+                                </connections>
+                            </button>
                         </subviews>
                         <viewLayoutGuide key="safeArea" id="czV-Br-Vf9"/>
                         <color key="backgroundColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                         <constraints>
+                            <constraint firstItem="QJu-xe-pfH" firstAttribute="centerX" secondItem="czV-Br-Vf9" secondAttribute="centerX" id="95b-k1-8Sg"/>
                             <constraint firstItem="CxI-Ah-rhD" firstAttribute="centerX" secondItem="czV-Br-Vf9" secondAttribute="centerX" id="GFs-d2-wT1"/>
                             <constraint firstItem="X1F-ma-vgH" firstAttribute="bottom" secondItem="czV-Br-Vf9" secondAttribute="bottom" id="KrD-yz-taI"/>
                             <constraint firstItem="CxI-Ah-rhD" firstAttribute="centerY" secondItem="czV-Br-Vf9" secondAttribute="centerY" id="LkY-TV-3FO"/>
                             <constraint firstItem="X1F-ma-vgH" firstAttribute="centerX" secondItem="CxI-Ah-rhD" secondAttribute="centerX" id="PXw-K3-a3I"/>
                             <constraint firstItem="X1F-ma-vgH" firstAttribute="height" secondItem="CxI-Ah-rhD" secondAttribute="height" multiplier="0.4" id="aGW-RU-xN7"/>
                             <constraint firstItem="X1F-ma-vgH" firstAttribute="width" secondItem="czV-Br-Vf9" secondAttribute="width" id="hcn-Bv-T5d"/>
+                            <constraint firstItem="QJu-xe-pfH" firstAttribute="top" secondItem="czV-Br-Vf9" secondAttribute="top" id="lSm-nW-1CV"/>
                             <constraint firstItem="CxI-Ah-rhD" firstAttribute="width" secondItem="czV-Br-Vf9" secondAttribute="height" multiplier="1:1" id="pSC-d8-CRf"/>
                         </constraints>
                     </view>
                     <connections>
                         <outlet property="audioRoutePicker" destination="X1F-ma-vgH" id="HoX-M4-1SP"/>
                         <outlet property="playButton" destination="CxI-Ah-rhD" id="dEG-a2-sDT"/>
+                        <outlet property="playFileButton" destination="QJu-xe-pfH" id="pD8-Qf-iKf"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Lza-2j-ClS" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
@@ -69,6 +89,7 @@
     </scenes>
     <resources>
         <image name="play" catalog="system" width="117" height="128"/>
+        <image name="play.rectangle.on.rectangle" catalog="system" width="128" height="98"/>
         <image name="waveform.path" catalog="system" width="128" height="113"/>
         <systemColor name="linkColor">
             <color red="0.0" green="0.47843137254901963" blue="1" alpha="1" colorSpace="custom" customColorSpace="sRGB"/>

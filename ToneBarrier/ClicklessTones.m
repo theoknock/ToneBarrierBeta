@@ -140,8 +140,38 @@ static double(^randomize)(double, double, double) = ^ double (double min, double
     return ( (arc4random() % (max-min+1)) + min );
 }
 
+static double (^(^(^random_generator)(double(^(*))(double)))(double(^(*))(double)))(void) = ^ (double(^(*distributor))(double)) {
+    srand48((unsigned int)time(0));
+    return ^ (double(^(*number))(double)) {
+        static double random;
+        return ^ double {
+            return (*number)((*distributor)((random = drand48())));
+        };
+    };
+};
+
 - (void)createAudioBufferWithFormat:(AVAudioFormat *)audioFormat completionBlock:(CreateAudioBufferCompletionBlock)createAudioBufferCompletionBlock
 {
+    // TO-DO: Add a weighted-distribution block parameter that takes the random number as a parameter and returns the result to the double parameter of the number block
+    
+    
+//    static const void * (^(^signal_time)(AVAudioFramePosition *, AVAudioFrameCount))(void) = ^ (AVAudioFramePosition * position, AVAudioFrameCount * frames) {
+//        static AVAudioFramePosition split;
+//        split = (AVAudioFramePosition)random_generator()(^ double (double random) {
+//            return (double)(*frames) * random;
+//        });
+//        
+//        static double index, count, time;
+//        count = split;
+//        return ^ double {
+//            // position to split
+//            // split to frames
+//            (count = (count = (((index = minimum(*position, split)) == frames) ?: split)));
+//            printf("\t\t\ttime == %f\n\n", index);
+//            return (double)time;
+//        };
+//    };
+    
     AVAudioPCMBuffer * (^createAudioBuffer)(double, double) = ^ AVAudioPCMBuffer * (double frequencyLeft, double frequencyRight)
     {
         AVAudioChannelCount channelCount = audioFormat.channelCount;
@@ -157,8 +187,8 @@ static double(^randomize)(double, double, double) = ^ double (double min, double
             double normalized_index = LinearInterpolation(index, frameCount);
 //            if (left_channel)  left_channel[index]  = NormalizedSineEaseInOut(normalized_index, frequencyLeft, amplitude_frequency);
 //            if (right_channel) right_channel[index] = NormalizedSineEaseInOut(normalized_index, frequencyRight, amplitude_frequency);
-            if (left_channel)  left_channel[index]  = NormalizedSineEaseInOut(normalized_index, frequencyLeft, amplitude_frequency) + (0.5 * (NormalizedSineEaseInOut(normalized_index, frequencyRight, amplitude_frequency) - NormalizedSineEaseInOut(normalized_index, frequencyLeft, amplitude_frequency)));
-            if (right_channel) right_channel[index] = NormalizedSineEaseInOut(normalized_index, frequencyRight, amplitude_frequency) + (0.5 * (NormalizedSineEaseInOut(normalized_index, frequencyLeft, amplitude_frequency) - NormalizedSineEaseInOut(normalized_index, frequencyRight, amplitude_frequency)));
+            if (left_channel)  left_channel[index]  = NormalizedSineEaseInOut(normalized_index, frequencyLeft,  amplitude_frequency); //+ (0.5 * (NormalizedSineEaseInOut(normalized_index, frequencyRight, amplitude_frequency) - NormalizedSineEaseInOut(normalized_index, frequencyLeft, amplitude_frequency)));
+            if (right_channel) right_channel[index] = NormalizedSineEaseInOut(normalized_index, frequencyRight, amplitude_frequency);// + (0.5 * (NormalizedSineEaseInOut(normalized_index, frequencyLeft, amplitude_frequency) - NormalizedSineEaseInOut(normalized_index, frequencyRight, amplitude_frequency)));
         }
 
         return pcmBuffer;
@@ -173,6 +203,7 @@ static double(^randomize)(double, double, double) = ^ double (double min, double
             createAudioBufferCompletionBlock(createAudioBuffer([self->_distributor nextInt], [self->_distributor nextInt]),
                                              createAudioBuffer([self->_distributor nextInt], [self->_distributor nextInt]),
             ^{
+                NSLog(@"BUFFERING: %@\n", [AVAudioTime timeWithHostTime:time(0)]);
                 block();
             });
         });

@@ -11,7 +11,6 @@
 		B96C25B12865F0EA00A75975 /* ClicklessTones.m in Sources */ = {isa = PBXBuildFile; fileRef = B96C25AF2865F0EA00A75975 /* ClicklessTones.m */; };
 		B96C25B42865F1A400A75975 /* easing.c in Sources */ = {isa = PBXBuildFile; fileRef = B96C25B22865F1A400A75975 /* easing.c */; };
 		B9869C5F28672FAC004C4E18 /* ToneGenerator.m in Sources */ = {isa = PBXBuildFile; fileRef = B9869C5D28672FAC004C4E18 /* ToneGenerator.m */; };
-		B9869C62286733DA004C4E18 /* Frequencies.m in Sources */ = {isa = PBXBuildFile; fileRef = B9869C60286733DA004C4E18 /* Frequencies.m */; };
 		B9869C6628673755004C4E18 /* MediaPlayer.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B9869C6428673755004C4E18 /* MediaPlayer.framework */; };
 		B9869C6728673755004C4E18 /* AudioToolbox.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B9869C6528673755004C4E18 /* AudioToolbox.framework */; };
 		B9869C7028674C33004C4E18 /* AVKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B9869C6F28674C33004C4E18 /* AVKit.framework */; };
@@ -47,8 +46,6 @@
 		B96C25B32865F1A400A75975 /* easing.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = easing.h; sourceTree = "<group>"; };
 		B9869C5D28672FAC004C4E18 /* ToneGenerator.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ToneGenerator.m; sourceTree = "<group>"; wrapsLines = 0; };
 		B9869C5E28672FAC004C4E18 /* ToneGenerator.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = ToneGenerator.h; sourceTree = "<group>"; };
-		B9869C60286733DA004C4E18 /* Frequencies.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = Frequencies.m; sourceTree = "<group>"; };
-		B9869C61286733DA004C4E18 /* Frequencies.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = Frequencies.h; sourceTree = "<group>"; };
 		B9869C6428673755004C4E18 /* MediaPlayer.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = MediaPlayer.framework; path = System/Library/Frameworks/MediaPlayer.framework; sourceTree = SDKROOT; };
 		B9869C6528673755004C4E18 /* AudioToolbox.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AudioToolbox.framework; path = System/Library/Frameworks/AudioToolbox.framework; sourceTree = SDKROOT; };
 		B9869C6F28674C33004C4E18 /* AVKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AVKit.framework; path = System/Library/Frameworks/AVKit.framework; sourceTree = SDKROOT; };
@@ -124,8 +121,6 @@
 			isa = PBXGroup;
 			children = (
 				B9DB5A36287517050000FE82 /* ToneBarrier.entitlements */,
-				B9869C61286733DA004C4E18 /* Frequencies.h */,
-				B9869C60286733DA004C4E18 /* Frequencies.m */,
 				B9869C5E28672FAC004C4E18 /* ToneGenerator.h */,
 				B9869C5D28672FAC004C4E18 /* ToneGenerator.m */,
 				B96C25B02865F0EA00A75975 /* ClicklessTones.h */,
@@ -135,8 +130,8 @@
 				B96C25B22865F1A400A75975 /* easing.c */,
 				B99077DE285AD0AF004F494E /* AppDelegate.h */,
 				B99077DF285AD0AF004F494E /* AppDelegate.m */,
-				B99077E1285AD0AF004F494E /* SceneDelegate.h */,
 				B99077E2285AD0AF004F494E /* SceneDelegate.m */,
+				B99077E1285AD0AF004F494E /* SceneDelegate.h */,
 				B99077E4285AD0AF004F494E /* ViewController.h */,
 				B99077E5285AD0AF004F494E /* ViewController.m */,
 				B9869C7128674C77004C4E18 /* AudioRoutePicker.h */,
@@ -230,7 +225,6 @@
 				B99077F1285AD0B0004F494E /* main.m in Sources */,
 				B9869C7328674C77004C4E18 /* AudioRoutePicker.m in Sources */,
 				B99077E3285AD0AF004F494E /* SceneDelegate.m in Sources */,
-				B9869C62286733DA004C4E18 /* Frequencies.m in Sources */,
 				B9869C5F28672FAC004C4E18 /* ToneGenerator.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

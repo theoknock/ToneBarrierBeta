@@ -25,6 +25,7 @@ typedef void (^CreateAudioBufferCompletionBlock)(AVAudioPCMBuffer * _Nonnull buf
 
 + (nonnull ToneGenerator *)sharedGenerator;
 
-- (void)togglePlayWithAudioEngineRunningStatusCallback:(void (^(^)(void))(BOOL))audioEngineRunningStatus;
+- (void)togglePlayWithAudioEngineRunningStatusCallback:(BOOL (^(^)(typeof(^{}) _Nullable))(BOOL, BOOL))audioEngineRunningStatus;
+- (void)togglePlayFileWithAudioPlayerNodePlayingStatusCallback:(BOOL (^(^)(void))(BOOL, BOOL))audioPlayerNodePlayingStatus;
 
 @end

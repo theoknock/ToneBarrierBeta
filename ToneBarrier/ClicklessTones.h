@@ -44,12 +44,7 @@ static double (^scale)(double, double, double, double, double) = ^ double (doubl
 //      };
 //
 
-static double (^(^random_generator)(void))(void) = ^{
-    srand48((unsigned int)time(0));
-    return ^ double {
-        return drand48();
-    };
-};
+
 
 static double (^normalize)(double, double, double) = ^double(double min, double max, double value) {
     double result = (value - min) / (max - min);

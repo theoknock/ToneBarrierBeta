@@ -12,7 +12,6 @@
 
 #import "ToneGenerator.h"
 #import "ClicklessTones.h"
-#import "Frequencies.h"
 
 #include "easing.h"
 
@@ -26,6 +25,11 @@
 @property (nonatomic, strong) AVAudioMixerNode  * mainNode;
 @property (nonatomic, strong) AVAudioUnitReverb * reverb;
 @property (nonatomic, strong) AVAudioFormat     * audioFormat;
+
+@property (nonatomic, strong) NSURL * mixerOutputFileURL;
+@property (nonatomic, strong) AVAudioFile *mixerOutputFile;
+@property (nonatomic, strong) AVAudioPCMBuffer * mixerOutputFileBuffer;
+@property (nonatomic, strong) AVAudioPlayerNode * mixerOutputFilePlayer;
 
 @end
 
@@ -143,16 +147,13 @@ static void (^(^iterator)(const unsigned long))(id(^)(void)) = ^ (const unsigned
     typeof(id(^)(void)) retained_objects_ref;
     return ^ (id * retained_objects_t) {
         return ^ (id(^object)(void)) {
-            
-            // --------
-            ^ (unsigned long index) {
-                return ^ unsigned long {
-                    printf("retained_object: %p\n", (*((id * const)retained_objects_t + object_count) = retain_object(retainable_object(object))));
-                    return index;
-                };
+            ^ (void (^(^retain_objects)(unsigned long))(void(^)(void))) {
+                return ^ (unsigned long index) {
+                    return retain_objects(index)(^{
+                        printf("retained_object: %p\n", (*((id * const)retained_objects_t + index) = retain_object(retainable_object(object))));
+                    });
+                }(object_count);
             };
-            // --------
-            
         };
     }((id *)&retained_objects_ref);
 };
@@ -199,11 +200,13 @@ static void (^(^iterator)(const unsigned long))(id(^)(void)) = ^ (const unsigned
             [_audioEngine attachNode:player_node];
             [_audioEngine connect:player_node to:_mixerNode format:_audioFormat];
         }];
-        
-        
 
         [_audioEngine connect:_mixerNode to:_reverb     format:_audioFormat];
         [_audioEngine connect:_reverb    to:_mainNode   format:_audioFormat];
+        
+        _mixerOutputFilePlayer = [[AVAudioPlayerNode alloc] init];
+        [_audioEngine attachNode:_mixerOutputFilePlayer];
+        [_audioEngine connect:_mixerOutputFilePlayer to:_mixerNode format:[_mixerNode outputFormatForBus:0]];
     }
     
     return self;
@@ -228,16 +231,26 @@ static void (^(^iterator)(const unsigned long))(id(^)(void)) = ^ (const unsigned
     return ( (arc4random() % (max-min+1)) + min );
 }
 
-- (void)togglePlayWithAudioEngineRunningStatusCallback:(void (^(^)(void))(BOOL))audioEngineRunningStatus
+- (void)togglePlayWithAudioEngineRunningStatusCallback:(BOOL (^(^)(typeof(^{}) _Nullable))(BOOL, BOOL))audioEngineRunningStatus
 {
     if (![self->_audioEngine isRunning])
     {
         __autoreleasing NSError *error = nil;
-        audioEngineRunningStatus()([_audioEngine startAndReturnError:&error] && [_audioEngine isRunning]);
+        audioEngineRunningStatus(nil)([_audioEngine startAndReturnError:&error] && [_audioEngine isRunning], [_mixerOutputFilePlayer isPlaying]);
         (!error) ? [self configureAudioSession] : NSLog(@"\nstartAndReturnError error:\n\n%@\n\n", error.debugDescription);
         
         const AVAudioChannelCount channel_count = _audioFormat.channelCount;
         const AVAudioFrameCount frame_count     = _audioFormat.sampleRate * channel_count;
+        
+        _mixerOutputFileURL = [NSURL URLWithString:[NSTemporaryDirectory() stringByAppendingString:@"mixerOutput.caf"]];
+        _mixerOutputFile = [[AVAudioFile alloc] initForWriting:_mixerOutputFileURL settings:[[_mixerNode outputFormatForBus:0]  settings] error:&error];
+        NSAssert(_mixerOutputFile != nil, @"mixerOutputFile is nil, %@", [error localizedDescription]);
+        
+        [_mixerNode installTapOnBus:0 bufferSize:frame_count format:[_mixerNode outputFormatForBus:0] block:^(AVAudioPCMBuffer *buffer, AVAudioTime *when) {
+            NSError *error;
+            NSLog(@"RECORDING: %@\n", when);
+            NSAssert([_mixerOutputFile writeFromBuffer:buffer error:&error], @"error writing buffer data to file, %@", [error localizedDescription]);
+        }];
         
         [_playerNodes enumerateObjectsUsingBlock:^(id(^retained_object)(void), BOOL * _Nonnull stop) {
             AVAudioPlayerNode * player_node = (AVAudioPlayerNode *)retained_object();
@@ -256,9 +269,65 @@ static void (^(^iterator)(const unsigned long))(id(^)(void)) = ^ (const unsigned
         }];
         
     } else {
-        [self->_audioEngine pause];
-        audioEngineRunningStatus()([self.audioEngine isRunning]);
+        audioEngineRunningStatus(^{
+            printf("Pausing audio engine...\n");
+            [self->_audioEngine pause];
+            [_playerNodes enumerateObjectsUsingBlock:^(id(^retained_object)(void), BOOL * _Nonnull stop) {
+                AVAudioPlayerNode * player_node = (AVAudioPlayerNode *)retained_object();
+                ((*stop = ![player_node isPlaying])) ?: ^{ [player_node pause]; [player_node reset]; }();
+            }];
+            [_mixerNode removeTapOnBus:0]; })([self.audioEngine isRunning], [_mixerOutputFilePlayer isPlaying]);
     }
+}
+
+- (void)togglePlayFileWithAudioPlayerNodePlayingStatusCallback:(BOOL (^(^)(void))(BOOL, BOOL))audioPlayerNodePlayingStatus
+{
+    NSLog(@"%s\n", __PRETTY_FUNCTION__);
+    if (![_mixerOutputFilePlayer isPlaying]) {
+        if (_mixerOutputFileURL) {
+            NSError *error;
+            AVAudioFile *recordedFile = [[AVAudioFile alloc] initForReading:_mixerOutputFileURL error:&error];
+            NSAssert(recordedFile != nil, @"recordedFile is nil, %@", [error localizedDescription]);
+            [_mixerOutputFilePlayer scheduleFile:recordedFile atTime:nil completionHandler:^ (AVAudioPlayerNode * file_player) {
+                return ^{
+                    AVAudioTime *playerTime = [file_player playerTimeForNodeTime:file_player.lastRenderTime];
+                    NSLog(@"PLAYING: %@\n", playerTime);
+                    double delayInSecs = (recordedFile.length - playerTime.sampleTime) / recordedFile.processingFormat.sampleRate;
+                    dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSecs * NSEC_PER_SEC)), dispatch_get_main_queue(), ^{
+                        [file_player stop];
+                    });
+                };
+            }(_mixerOutputFilePlayer)];
+            if ([_audioEngine startAndReturnError:&error]) [_mixerOutputFilePlayer play];
+        } else {
+            NSLog(@"\n\n%s\n\nERROR PLAYING RECORDING FILE\n\n", __PRETTY_FUNCTION__);
+        }
+    } else {
+        [self->_audioEngine pause];
+        [_mixerOutputFilePlayer pause];
+    }
+    
+    //        typedef BOOL  (^block)(void);
+    //        typedef block (^blk)(void);
+//        typedef blk   (^b)(void);
+//        typedef b     (^_)(b);
+    //
+    //
+    //
+//
+//    ^ BOOL {
+//        ^ (BOOL(^startOutputFilePlayer)(typeof(^{}))) {
+//            ((startOutputFilePlayer (^{ ([_mixerOutputFilePlayer isPlaying]) ?: [_mixerOutputFilePlayer play]; }))
+//             (^ BOOL { return [_mixerOutputFilePlayer isPlaying]; }));
+//            return TRUE;
+//        };
+//
+//    };
+}
+
+- (void)stopPlayingRecordedFile
+{
+    [_mixerOutputFilePlayer stop];
 }
 
 @end

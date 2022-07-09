@@ -10,6 +10,8 @@
 @interface ViewController ()
 
 @property (weak, nonatomic) IBOutlet UIButton *playButton;
+@property (weak, nonatomic) IBOutlet UIButton *playFileButton;
+
 @property (weak, nonatomic) IBOutlet AudioRoutePicker *audioRoutePicker;
 @property (strong, nonatomic) MPNowPlayingInfoCenter * nowPlayingInfoCenter;
 @property (strong, nonatomic) MPRemoteCommandCenter * remoteCommandCenter;
@@ -29,6 +31,10 @@
     [self.playButton setImage:[UIImage systemImageNamed:@"stop"] forState:UIControlStateSelected];
     [self.playButton setImage:[UIImage systemImageNamed:@"play"] forState:UIControlStateNormal];
     [self.playButton setImage:[UIImage systemImageNamed:@"pause"] forState:UIControlStateDisabled];
+    
+    [self.playFileButton setImage:[UIImage systemImageNamed:@"play.rectangle.on.rectangle.fill"] forState:UIControlStateSelected];
+    [self.playFileButton setImage:[UIImage systemImageNamed:@"play.rectangle.on.rectangle"] forState:UIControlStateNormal];
+    [self.playFileButton setImage:[UIImage systemImageNamed:@"play.rectangle.on.rectangle.fill"] forState:UIControlStateDisabled];
     
 //    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleAudioRouteChange) name:AVAudioSessionRouteChangeNotification object:nil];
     
@@ -72,15 +78,42 @@
 }
 
 - (IBAction)playButtonAction:(UIButton *)sender {
-    [ToneGenerator.sharedGenerator togglePlayWithAudioEngineRunningStatusCallback:^ {
-        return ^ (BOOL audioEngineRunning) {
+    [ToneGenerator.sharedGenerator togglePlayWithAudioEngineRunningStatusCallback:^ (typeof(^{}) _Nullable asdf) {
+        !asdf ?: asdf();
+        return ^ BOOL (BOOL audioEngineRunning, BOOL audioPlayerNodePlaying) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [sender setSelected:audioEngineRunning];
+                [_nowPlayingInfoCenter setPlaybackState:(audioEngineRunning) ? MPNowPlayingPlaybackStatePlaying : MPNowPlayingPlaybackStatePaused];
+            });
+            dispatch_async(dispatch_get_main_queue(), ^{
                 dispatch_async(dispatch_get_main_queue(), ^{
-                    [sender setSelected:audioEngineRunning];
-                    [_nowPlayingInfoCenter setPlaybackState:(audioEngineRunning) ? MPNowPlayingPlaybackStatePlaying : MPNowPlayingPlaybackStatePaused];
+                    [self.playFileButton setSelected:!(audioEngineRunning && audioPlayerNodePlaying)];
+                    [self.playFileButton setEnabled:!(audioEngineRunning && !audioPlayerNodePlaying)];
+                    [_nowPlayingInfoCenter setPlaybackState:(audioEngineRunning && audioPlayerNodePlaying) ? MPNowPlayingPlaybackStatePlaying : MPNowPlayingPlaybackStatePaused];
                 });
-            };
+            });
+            return audioEngineRunning;
+        };
     }];
 }
+
+- (IBAction)playFileButtonAction:(UIButton *)sender
+{
+    // if audio engine AND file player node are running: STOP
+    // if audio engine is running AND file player node is stopped: DISABLE
+    // if audio engine AND file player node are stopped: PLAY
+    [ToneGenerator.sharedGenerator togglePlayFileWithAudioPlayerNodePlayingStatusCallback:^{
+        return ^ BOOL (BOOL audioEngineRunning, BOOL audioPlayerNodePlaying) {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [self.playFileButton setSelected:!(audioEngineRunning && audioPlayerNodePlaying)];
+                [self.playFileButton setEnabled:!(audioEngineRunning && !audioPlayerNodePlaying)];
+                [_nowPlayingInfoCenter setPlaybackState:(audioEngineRunning && audioPlayerNodePlaying) ? MPNowPlayingPlaybackStatePlaying : MPNowPlayingPlaybackStatePaused];
+            });
+            return audioPlayerNodePlaying;
+        };
+    }];
+}
+
 
 @end
 
