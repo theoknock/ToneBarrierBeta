@@ -24,10 +24,10 @@ double LinearEaseInOut(double x)
     return (x <= 0.5) ? x : 1.0 - x;
 }
 
-double NormalizedSineEaseInOut(double x, double ordinary_frequency, double amplitude)
+double NormalizedSineEaseInOut(double * x, double ordinary_frequency)
 {
 //    x = QuadraticEaseInOut(x);
-    return sinf(x * M_PI * ordinary_frequency); // removed x2
+    return sinf((*x) * M_PI * ordinary_frequency); // removed x2
 }
 
 double NormalizedCosineEaseInOut(double x, int ordinary_frequency, int amplitude)

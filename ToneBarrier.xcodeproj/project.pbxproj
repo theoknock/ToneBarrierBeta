@@ -38,6 +38,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		B907298C287A8E9000A82AEB /* Temp_File.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Temp_File.swift; sourceTree = "<group>"; };
 		B9553671286E990A001E350B /* ToneBarrierScorePlayer-OLD.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = "ToneBarrierScorePlayer-OLD.m"; sourceTree = "<group>"; };
 		B958ADA12877E45C00480467 /* GameKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = GameKit.framework; path = System/Library/Frameworks/GameKit.framework; sourceTree = SDKROOT; };
 		B96C25AF2865F0EA00A75975 /* ClicklessTones.m */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.objc; path = ClicklessTones.m; sourceTree = "<group>"; wrapsLines = 0; };
@@ -123,6 +124,7 @@
 				B9DB5A36287517050000FE82 /* ToneBarrier.entitlements */,
 				B9869C5E28672FAC004C4E18 /* ToneGenerator.h */,
 				B9869C5D28672FAC004C4E18 /* ToneGenerator.m */,
+				B907298C287A8E9000A82AEB /* Temp_File.swift */,
 				B96C25B02865F0EA00A75975 /* ClicklessTones.h */,
 				B96C25AF2865F0EA00A75975 /* ClicklessTones.m */,
 				B9553671286E990A001E350B /* ToneBarrierScorePlayer-OLD.m */,
@@ -130,8 +132,8 @@
 				B96C25B22865F1A400A75975 /* easing.c */,
 				B99077DE285AD0AF004F494E /* AppDelegate.h */,
 				B99077DF285AD0AF004F494E /* AppDelegate.m */,
-				B99077E2285AD0AF004F494E /* SceneDelegate.m */,
 				B99077E1285AD0AF004F494E /* SceneDelegate.h */,
+				B99077E2285AD0AF004F494E /* SceneDelegate.m */,
 				B99077E4285AD0AF004F494E /* ViewController.h */,
 				B99077E5285AD0AF004F494E /* ViewController.m */,
 				B9869C7128674C77004C4E18 /* AudioRoutePicker.h */,

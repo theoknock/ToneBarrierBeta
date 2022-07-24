@@ -20,11 +20,6 @@
 
 @implementation ViewController
 
-- (void)handleAudioRouteChange
-{
-    NSLog(@"AVAudioSessionRouteChangeNotification");
-};
-
 - (void)viewDidLoad {
     [super viewDidLoad];
     
@@ -35,8 +30,6 @@
     [self.playFileButton setImage:[UIImage systemImageNamed:@"play.rectangle.on.rectangle.fill"] forState:UIControlStateSelected];
     [self.playFileButton setImage:[UIImage systemImageNamed:@"play.rectangle.on.rectangle"] forState:UIControlStateNormal];
     [self.playFileButton setImage:[UIImage systemImageNamed:@"play.rectangle.on.rectangle.fill"] forState:UIControlStateDisabled];
-    
-//    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(handleAudioRouteChange) name:AVAudioSessionRouteChangeNotification object:nil];
     
     NSMutableDictionary<NSString *, id> * nowPlayingInfo = [[NSMutableDictionary alloc] initWithCapacity:2];
     [nowPlayingInfo setObject:@"ToneBarrier" forKey:MPMediaItemPropertyTitle];

@@ -14,7 +14,8 @@
 #import "ClicklessTones.h"
 
 #include "easing.h"
-
+#include <stdio.h>
+#include <stdint.h>
 
 @interface ToneGenerator ()
 
@@ -26,9 +27,9 @@
 @property (nonatomic, strong) AVAudioUnitReverb * reverb;
 @property (nonatomic, strong) AVAudioFormat     * audioFormat;
 
-@property (nonatomic, strong) NSURL * mixerOutputFileURL;
-@property (nonatomic, strong) AVAudioFile *mixerOutputFile;
-@property (nonatomic, strong) AVAudioPCMBuffer * mixerOutputFileBuffer;
+@property (nonatomic, strong) NSURL             * mixerOutputFileURL;
+@property (nonatomic, strong) AVAudioFile       * mixerOutputFile;
+@property (nonatomic, strong) AVAudioPCMBuffer  * mixerOutputFileBuffer;
 @property (nonatomic, strong) AVAudioPlayerNode * mixerOutputFilePlayer;
 
 @end
@@ -129,6 +130,7 @@ stored_object (^(^ _Nonnull store_object)(storable_object))(void) = ^ unstored_o
 //    }(&obj_collection);
 //};
 
+
 id (^retainable_object)(id(^)(void)) = ^ id (id(^object)(void)) {
     return ^{
         return object();
@@ -147,18 +149,16 @@ static void (^(^iterator)(const unsigned long))(id(^)(void)) = ^ (const unsigned
     typeof(id(^)(void)) retained_objects_ref;
     return ^ (id * retained_objects_t) {
         return ^ (id(^object)(void)) {
-            ^ (void (^(^retain_objects)(unsigned long))(void(^)(void))) {
-                return ^ (unsigned long index) {
-                    return retain_objects(index)(^{
-                        printf("retained_object: %p\n", (*((id * const)retained_objects_t + index) = retain_object(retainable_object(object))));
-                    });
-                }(object_count);
-            };
+            //            return ^ (void (^(^retain_objects)(unsigned long))(void(^)(void))) {
+            //                return ^ (unsigned long index) {
+            //                    return retain_objects(index)(^{
+            for (int index = 0 ; index < object_count; index++) printf("retained_object: %p\n", (*((id * const)retained_objects_t + index) = retain_object(retainable_object(object))));
+            //        });
+            //                }(object_count);
+            //            };
         };
     }((id *)&retained_objects_ref);
 };
-
-
 
 - (instancetype)init
 {
@@ -179,7 +179,7 @@ static void (^(^iterator)(const unsigned long))(id(^)(void)) = ^ (const unsigned
         _mixerNode = [[AVAudioMixerNode alloc] init];
         _reverb = [[AVAudioUnitReverb alloc] init];
         [_reverb loadFactoryPreset:AVAudioUnitReverbPresetLargeChamber];
-        [_reverb setWetDryMix:50.0];
+        [_reverb setWetDryMix:0.0];
         
         [_audioEngine attachNode:_reverb];
         [_audioEngine attachNode:_mixerNode];
